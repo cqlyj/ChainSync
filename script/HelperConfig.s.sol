@@ -3,6 +3,7 @@ pragma solidity 0.8.26;
 
 import {Script} from "forge-std/Script.sol";
 
+// We will deploy the contract on Amoy chain and the optional chain is Sepolia
 contract HelperConfig is Script {
     struct NetworkConfig {
         string chainBaseUrl;
@@ -15,24 +16,11 @@ contract HelperConfig is Script {
     NetworkConfig public activeNetworkConfig;
 
     constructor() {
-        if (block.chainid == 421614) {
-            activeNetworkConfig = getArbitrumConfig();
-        } else if (block.chainid == 11155111) {
+        if (block.chainid == 11155111) {
             activeNetworkConfig = getSepoliaConfig();
         } else {
             activeNetworkConfig = getOrCreateAnvilChainConfig();
         }
-    }
-
-    function getArbitrumConfig() private pure returns (NetworkConfig memory) {
-        return
-            NetworkConfig({
-                chainBaseUrl: "sepolia-explorer.arbitrum.io",
-                tokenAddress: 0xA8C0c11bf64AF62CDCA6f93D3769B88BdD7cb93D,
-                subscriber: 0xFB6a372F2F51a002b390D18693075157A459641F,
-                router: 0x234a5fb5Bd614a7AA2FfAB244D603abFA0Ac5C5C,
-                donID: 0x66756e2d617262697472756d2d7365706f6c69612d3100000000000000000000
-            });
     }
 
     function getSepoliaConfig() private pure returns (NetworkConfig memory) {
