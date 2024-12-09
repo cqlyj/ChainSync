@@ -6,10 +6,9 @@ import {HelperConfig} from "./HelperConfig.s.sol";
 import {CheckBalance} from "../src/CheckBalance.sol";
 
 contract DeployCheckBalance is Script {
-    HelperConfig public helperConfig;
-    CheckBalance public checkBalance;
-
     function run() public {
+        HelperConfig helperConfig = new HelperConfig();
+        CheckBalance checkBalance;
         (
             string memory chainBaseUrl,
             address tokenAddress,
