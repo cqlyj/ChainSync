@@ -78,11 +78,26 @@ contract CheckBalance is FunctionsClient, ConfirmedOwner {
             revert UnexpectedRequestID(requestId); // Check if request IDs match
         }
         // Update the contract's state variables with the response and any errors
-        s_lastResponse = abi.decode(response, (uint256));
+        string memory responseString = abi.decode(response, (string));
+        s_lastResponse = stringToUint256(responseString);
         s_lastError = err;
 
         // Emit an event to log the response
         emit Response(requestId, s_lastResponse, s_lastError);
+    }
+
+    function stringToUint256(
+        string memory s
+    ) public pure returns (uint256 result) {
+        bytes memory b = bytes(s);
+        uint256 i;
+        result = 0;
+        for (i = 0; i < b.length; i++) {
+            uint256 c = uint256(uint8(b[i]));
+            if (c >= 48 && c <= 57) {
+                result = result * 10 + (c - 48);
+            }
+        }
     }
 
     function getResponse() external view returns (uint256) {
