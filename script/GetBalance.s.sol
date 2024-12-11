@@ -5,15 +5,15 @@ import {Script, console} from "forge-std/Script.sol";
 import {CheckBalance} from "../src/CheckBalance.sol";
 import {DevOpsTools} from "lib/foundry-devops/src/DevOpsTools.sol";
 
-contract GetResponse is Script {
+contract GetBalance is Script {
     CheckBalance public checkBalance;
 
-    function getResponse(address checkBalanceAddress) public {
+    function getBalance(address checkBalanceAddress) public {
         checkBalance = CheckBalance(checkBalanceAddress);
         vm.startBroadcast();
-        uint256 response = checkBalance.getResponse();
+        uint256 balance = checkBalance.getBalance();
         vm.stopBroadcast();
-        console.log("Response: ", response);
+        console.log("Balance: ", balance);
     }
 
     function run() public {
@@ -23,6 +23,6 @@ contract GetResponse is Script {
         );
         console.log("Most recently deployed address: ", mostRecentlyDeployed);
 
-        getResponse(mostRecentlyDeployed);
+        getBalance(mostRecentlyDeployed);
     }
 }
