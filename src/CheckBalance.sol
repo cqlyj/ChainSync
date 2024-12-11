@@ -32,7 +32,12 @@ contract CheckBalance is FunctionsClient, ConfirmedOwner {
 
     error UnexpectedRequestID(bytes32 requestId);
 
-    event Response(bytes32 indexed requestId, bytes response, bytes err);
+    event Response(
+        bytes32 indexed requestId,
+        bytes response,
+        bytes err,
+        uint256 indexed balance
+    );
 
     constructor(
         string memory _chainBaseUrl,
@@ -85,7 +90,7 @@ contract CheckBalance is FunctionsClient, ConfirmedOwner {
         s_balance = stringToUint256(balanceString);
 
         // Emit an event to log the response
-        emit Response(requestId, s_lastResponse, s_lastError);
+        emit Response(requestId, s_lastResponse, s_lastError, s_balance);
     }
 
     function stringToUint256(
