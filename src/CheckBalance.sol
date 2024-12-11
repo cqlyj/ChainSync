@@ -9,7 +9,7 @@ contract CheckBalance is FunctionsClient, ConfirmedOwner {
     using FunctionsRequest for FunctionsRequest.Request;
 
     bytes32 private s_lastRequestId;
-    uint256 private s_lastResponse;
+    bytes private s_lastResponse;
     bytes private s_lastError;
     uint32 private s_gasLimit = 300000;
     bytes32 private s_donID;
@@ -28,10 +28,11 @@ contract CheckBalance is FunctionsClient, ConfirmedOwner {
         "}"
         "const { data } = apiResponse;"
         "return Functions.encodeString(data.result);";
+    uint256 private s_balance;
 
     error UnexpectedRequestID(bytes32 requestId);
 
-    event Response(bytes32 indexed requestId, uint256 response, bytes err);
+    event Response(bytes32 indexed requestId, bytes response, bytes err);
 
     constructor(
         string memory _chainBaseUrl,
@@ -78,9 +79,10 @@ contract CheckBalance is FunctionsClient, ConfirmedOwner {
             revert UnexpectedRequestID(requestId); // Check if request IDs match
         }
         // Update the contract's state variables with the response and any errors
-        string memory responseString = abi.decode(response, (string));
-        s_lastResponse = stringToUint256(responseString);
+        s_lastResponse = response;
         s_lastError = err;
+        string memory balanceString = string(response);
+        s_balance = stringToUint256(balanceString);
 
         // Emit an event to log the response
         emit Response(requestId, s_lastResponse, s_lastError);
@@ -100,11 +102,15 @@ contract CheckBalance is FunctionsClient, ConfirmedOwner {
         }
     }
 
-    function getResponse() external view returns (uint256) {
+    function getResponse() external view returns (bytes memory) {
         return s_lastResponse;
     }
 
     function getLastError() external view returns (bytes memory) {
         return s_lastError;
+    }
+
+    function getBalance() external view returns (uint256) {
+        return s_balance;
     }
 }
