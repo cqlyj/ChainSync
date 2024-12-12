@@ -45,6 +45,7 @@ contract SendRequestToGetBalance is Script {
             address tokenAddress,
             address subscriber,
             ,
+            ,
 
         ) = helperConfig.activeNetworkConfig();
 

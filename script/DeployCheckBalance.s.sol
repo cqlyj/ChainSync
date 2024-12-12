@@ -14,7 +14,8 @@ contract DeployCheckBalance is Script {
             address tokenAddress,
             address subscriber,
             address router,
-            bytes32 donID
+            bytes32 donID,
+
         ) = helperConfig.activeNetworkConfig();
 
         vm.startBroadcast();

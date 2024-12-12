@@ -43,7 +43,7 @@ contract AddConsumer is Script {
         checkBalance = CheckBalance(mostRecentlyDeployed);
 
         helperConfig = new HelperConfig();
-        (, , , address _router, ) = helperConfig.activeNetworkConfig();
+        (, , , address _router, , ) = helperConfig.activeNetworkConfig();
         router = _router;
         addConsumer(SEPOLIA_SUBSCRIPTION_ID, mostRecentlyDeployed);
     }
