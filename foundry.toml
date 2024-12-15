@@ -6,6 +6,7 @@ libs = ["lib"]
 remappings = [
     '@chainlink/contracts/=lib/chainlink-brownie-contracts/contracts/',
     "@openzeppelin-contracts/contracts/=lib/openzeppelin-contracts/contracts/",
+    "@chainlink/local/=lib/chainlink-local/",
 ]
 
 fs_permissions = [{ access = "read", path = "./broadcast" }]
