@@ -148,21 +148,20 @@ contract AmoyTokenTransfer is OwnerIsCreator {
     /// It is automatically called when Ether is transferred to the contract without any data.
     receive() external payable {}
 
-    /// @notice Allows the contract owner to withdraw the entire balance of Ether from the contract.
-    /// @dev This function reverts if there are no funds to withdraw or if the transfer fails.
-    /// It should only be callable by the owner of the contract.
-    /// @param _beneficiary The address to which the Ether should be transferred.
-    function withdraw(address _beneficiary) public onlyOwner {
+    /// @notice Allows the owner of the contract to withdraw all tokens of a specific ERC20 token.
+    /// @dev This function reverts with a 'NothingToWithdraw' error if there are no tokens to withdraw.
+    /// @param _beneficiary The address to which the tokens will be sent.
+    /// @param _token The contract address of the ERC20 token to be withdrawn.
+    function withdrawToken(
+        address _beneficiary,
+        address _token
+    ) public onlyOwner {
         // Retrieve the balance of this contract
-        uint256 amount = address(this).balance;
+        uint256 amount = IERC20(_token).balanceOf(address(this));
 
         // Revert if there is nothing to withdraw
         if (amount == 0) revert NothingToWithdraw();
 
-        // Attempt to send the funds, capturing the success status and discarding any return data
-        (bool sent, ) = _beneficiary.call{value: amount}("");
-
-        // Revert if the send failed, with information about the attempted transfer
-        if (!sent) revert FailedToWithdrawEth(msg.sender, _beneficiary, amount);
+        IERC20(_token).safeTransfer(_beneficiary, amount);
     }
 }
