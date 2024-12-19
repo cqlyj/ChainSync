@@ -4,7 +4,7 @@ pragma solidity 0.8.26;
 import {Test} from "forge-std/Test.sol";
 import {AmoyTokenTransfer} from "src/AmoyTokenTransfer.sol";
 import {CCIPLocalSimulator, IRouterClient, LinkToken, BurnMintERC677Helper} from "@chainlink/local/src/ccip/CCIPLocalSimulator.sol";
-import {TokenReceiverMock} from "test/no-fork/mocks/TokenReceiverMock.sol";
+import {TokenReceiverMock} from "test/mocks/TokenReceiverMock.sol";
 
 contract TokenTransferTest is Test {
     CCIPLocalSimulator public ccipLocalSimulator;
