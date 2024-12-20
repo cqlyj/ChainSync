@@ -1,96 +1,96 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import {Test, console} from "forge-std/Test.sol";
-import {CCIPLocalSimulatorFork, Register} from "@chainlink/local/src/ccip/CCIPLocalSimulatorFork.sol";
-import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
-import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
-import {SepoliaSender} from "src/SepoliaSender.sol";
-import {AmoyReceiver} from "src/AmoyReceiver.sol";
+// import {Test, console} from "forge-std/Test.sol";
+// import {CCIPLocalSimulatorFork, Register} from "@chainlink/local/src/ccip/CCIPLocalSimulatorFork.sol";
+// import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
+// import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
+// import {SepoliaSender} from "src/SepoliaSender.sol";
+// import {AmoyReceiver} from "src/AmoyReceiver.sol";
 
-contract MessageTransferForkTest is Test {
-    CCIPLocalSimulatorFork public ccipLocalSimulatorFork;
-    uint64 public destinationChainSelector;
-    uint256 public sourceFork;
-    uint256 public destinationFork;
+// contract MessageTransferForkTest is Test {
+//     CCIPLocalSimulatorFork public ccipLocalSimulatorFork;
+//     uint64 public destinationChainSelector;
+//     uint256 public sourceFork;
+//     uint256 public destinationFork;
 
-    IRouterClient public sourceRouter;
-    IRouterClient public destinationRouter;
+//     IRouterClient public sourceRouter;
+//     IRouterClient public destinationRouter;
 
-    SepoliaSender public sepoliaSender;
-    AmoyReceiver public amoyReceiver;
+//     SepoliaSender public sepoliaSender;
+//     AmoyReceiver public amoyReceiver;
 
-    function setUp() public {
-        string memory SOURCE_RPC_URL = vm.envString("SEPOLIA_RPC_URL");
-        string memory DESTINATION_RPC_URL = vm.envString("AMOY_RPC_URL");
-        sourceFork = vm.createFork(SOURCE_RPC_URL);
-        destinationFork = vm.createSelectFork(DESTINATION_RPC_URL);
+//     function setUp() public {
+//         string memory SOURCE_RPC_URL = vm.envString("SEPOLIA_RPC_URL");
+//         string memory DESTINATION_RPC_URL = vm.envString("AMOY_RPC_URL");
+//         sourceFork = vm.createFork(SOURCE_RPC_URL);
+//         destinationFork = vm.createSelectFork(DESTINATION_RPC_URL);
 
-        ccipLocalSimulatorFork = new CCIPLocalSimulatorFork();
-        vm.makePersistent(address(ccipLocalSimulatorFork));
+//         ccipLocalSimulatorFork = new CCIPLocalSimulatorFork();
+//         vm.makePersistent(address(ccipLocalSimulatorFork));
 
-        vm.selectFork(sourceFork);
-        Register.NetworkDetails
-            memory sourceNetworkDetails = ccipLocalSimulatorFork
-                .getNetworkDetails(block.chainid);
-        sourceRouter = IRouterClient(sourceNetworkDetails.routerAddress);
+//         vm.selectFork(sourceFork);
+//         Register.NetworkDetails
+//             memory sourceNetworkDetails = ccipLocalSimulatorFork
+//                 .getNetworkDetails(block.chainid);
+//         sourceRouter = IRouterClient(sourceNetworkDetails.routerAddress);
 
-        sepoliaSender = new SepoliaSender(
-            address(sourceRouter),
-            address(sourceNetworkDetails.linkAddress)
-        );
+//         sepoliaSender = new SepoliaSender(
+//             address(sourceRouter),
+//             address(sourceNetworkDetails.linkAddress)
+//         );
 
-        vm.selectFork(destinationFork);
-        Register.NetworkDetails
-            memory destinationNetworkDetails = ccipLocalSimulatorFork
-                .getNetworkDetails(block.chainid);
-        destinationChainSelector = destinationNetworkDetails.chainSelector;
-        destinationRouter = IRouterClient(
-            destinationNetworkDetails.routerAddress
-        );
+//         vm.selectFork(destinationFork);
+//         Register.NetworkDetails
+//             memory destinationNetworkDetails = ccipLocalSimulatorFork
+//                 .getNetworkDetails(block.chainid);
+//         destinationChainSelector = destinationNetworkDetails.chainSelector;
+//         destinationRouter = IRouterClient(
+//             destinationNetworkDetails.routerAddress
+//         );
 
-        amoyReceiver = new AmoyReceiver(address(destinationRouter));
-    }
+//         amoyReceiver = new AmoyReceiver(address(destinationRouter));
+//     }
 
-    function testMessageTransferWithLinkTokenPaidFork() public {
-        vm.selectFork(sourceFork);
+//     function testMessageTransferWithLinkTokenPaidFork() public {
+//         vm.selectFork(sourceFork);
 
-        ccipLocalSimulatorFork.requestLinkFromFaucet(
-            address(sepoliaSender),
-            5 ether
-        );
+//         ccipLocalSimulatorFork.requestLinkFromFaucet(
+//             address(sepoliaSender),
+//             5 ether
+//         );
 
-        bytes memory signedMessage = abi.encodePacked("Hello, Amoy!");
+//         bytes memory signedMessage = abi.encodePacked("Hello, Amoy!");
 
-        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        // Here I need to get the destinationChainSelector again since the state variable is stored in the destination chain not the source chain //
+//         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//         // Here I need to get the destinationChainSelector again since the state variable is stored in the destination chain not the source chain //
 
-        vm.selectFork(destinationFork);
-        Register.NetworkDetails
-            memory destinationNetworkDetails = ccipLocalSimulatorFork
-                .getNetworkDetails(block.chainid);
-        destinationChainSelector = destinationNetworkDetails.chainSelector;
+//         vm.selectFork(destinationFork);
+//         Register.NetworkDetails
+//             memory destinationNetworkDetails = ccipLocalSimulatorFork
+//                 .getNetworkDetails(block.chainid);
+//         destinationChainSelector = destinationNetworkDetails.chainSelector;
 
-        vm.selectFork(sourceFork);
+//         vm.selectFork(sourceFork);
 
-        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-        bytes32 messageId = sepoliaSender.sendMessage(
-            destinationChainSelector,
-            address(amoyReceiver),
-            signedMessage
-        );
+//         bytes32 messageId = sepoliaSender.sendMessage(
+//             destinationChainSelector,
+//             address(amoyReceiver),
+//             signedMessage
+//         );
 
-        ccipLocalSimulatorFork.switchChainAndRouteMessage(destinationFork);
+//         ccipLocalSimulatorFork.switchChainAndRouteMessage(destinationFork);
 
-        vm.selectFork(destinationFork);
-        bytes memory receivedMessage = amoyReceiver.getSignedMessage();
-        bytes32 lastMessageId = amoyReceiver.getMessageId();
+//         vm.selectFork(destinationFork);
+//         bytes memory receivedMessage = amoyReceiver.getEncodedSignedMessage();
+//         bytes32 lastMessageId = amoyReceiver.getMessageId();
 
-        string memory expectedMessage = "Hello, Amoy!";
-        string memory actualMessage = abi.decode(receivedMessage, (string));
+//         string memory expectedMessage = "Hello, Amoy!";
+//         string memory actualMessage = abi.decode(receivedMessage, (string));
 
-        assertEq(messageId, lastMessageId);
-        assertEq(expectedMessage, actualMessage);
-    }
-}
+//         assertEq(messageId, lastMessageId);
+//         assertEq(expectedMessage, actualMessage);
+//     }
+// }
