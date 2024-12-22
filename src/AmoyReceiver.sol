@@ -6,12 +6,17 @@ import {CCIPReceiver} from "@chainlink/contracts/src/v0.8/ccip/applications/CCIP
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {AmoyReceiverSignedMessage} from "./library/AmoyReceiverSignedMessage.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {AmoyTokenTransfer} from "./AmoyTokenTransfer.sol";
 
 /// @title AmoyReceiver
 /// @author Luo Yingjie
 /// @notice This contract will receive the message sent from sepolia chain
 /// @notice This contract will be deployed on the amoy chain
 contract AmoyReceiver is CCIPReceiver, EIP712 {
+    using SafeERC20 for IERC20;
+
     error AmoyReceiver__InvalidSignature();
 
     event MessageReceived(
@@ -29,12 +34,18 @@ contract AmoyReceiver is CCIPReceiver, EIP712 {
         keccak256(
             "SignedMessage(uint64 chainSelector,address user,address token,uint256 amount,address transferContract,address router,uint256 nonce,uint256 expiry)"
         );
+    AmoyTokenTransfer private amoyTokenTransfer;
 
     /// @notice Constructor initializes the contract with the router address.
     /// @param router The address of the router contract.
     constructor(
-        address router
-    ) CCIPReceiver(router) EIP712("AmoyReceiver", "1") {}
+        address router,
+        address amoyTokenTransferAddress
+    ) CCIPReceiver(router) EIP712("AmoyReceiver", "1") {
+        amoyTokenTransfer = AmoyTokenTransfer(
+            payable(amoyTokenTransferAddress)
+        );
+    }
 
     /// handle a received message
     function _ccipReceive(
@@ -66,6 +77,8 @@ contract AmoyReceiver is CCIPReceiver, EIP712 {
             revert AmoyReceiver__InvalidSignature();
         }
 
+        _execute(signedMessage);
+
         emit MessageReceived(
             any2EvmMessage.messageId,
             any2EvmMessage.sourceChainSelector, // fetch the source chain identifier (aka selector)
@@ -77,6 +90,34 @@ contract AmoyReceiver is CCIPReceiver, EIP712 {
     /*//////////////////////////////////////////////////////////////
                            INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
+
+    function _execute(
+        AmoyReceiverSignedMessage.SignedMessage memory signedMessage
+    ) private returns (bytes32) {
+        IERC20(signedMessage.token).safeTransferFrom(
+            signedMessage.user,
+            signedMessage.transferContract,
+            signedMessage.amount
+        );
+
+        IERC20(signedMessage.token).approve(
+            address(amoyTokenTransfer),
+            signedMessage.amount
+        );
+        IERC20(signedMessage.token).safeTransfer(
+            address(amoyTokenTransfer),
+            signedMessage.amount
+        );
+
+        bytes32 messageId = amoyTokenTransfer.transferTokensPayLINK(
+            signedMessage.chainSelector,
+            signedMessage.user,
+            signedMessage.token,
+            signedMessage.amount
+        );
+
+        return messageId;
+    }
 
     function _isValidSignature(
         address signer,
