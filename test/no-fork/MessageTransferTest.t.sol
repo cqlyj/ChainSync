@@ -6,6 +6,7 @@ import {CCIPLocalSimulator, IRouterClient, LinkToken, BurnMintERC677Helper} from
 import {SepoliaSender} from "src/SepoliaSender.sol";
 import {AmoyReceiver} from "src/AmoyReceiver.sol";
 import {AmoyReceiverSignedMessage} from "src/library/AmoyReceiverSignedMessage.sol";
+import {AmoyTokenTransfer} from "src/AmoyTokenTransfer.sol";
 
 contract MessageTransferTest is Test {
     CCIPLocalSimulator public ccipLocalSimulator;
@@ -14,6 +15,7 @@ contract MessageTransferTest is Test {
 
     SepoliaSender public sepoliaSender;
     AmoyReceiver public amoyReceiver;
+    AmoyTokenTransfer public amoyTokenTransfer;
 
     address user;
     uint256 userPrivateKey;
@@ -22,6 +24,7 @@ contract MessageTransferTest is Test {
     IRouterClient destinationRouter;
 
     function setUp() public {
+        (user, userPrivateKey) = makeAddrAndKey("user");
         ccipLocalSimulator = new CCIPLocalSimulator();
 
         (
@@ -39,9 +42,14 @@ contract MessageTransferTest is Test {
         destinationRouter = _destinationRouter;
 
         sepoliaSender = new SepoliaSender(address(sourceRouter), address(link));
-        amoyReceiver = new AmoyReceiver(address(destinationRouter));
-
-        (user, userPrivateKey) = makeAddrAndKey("user");
+        amoyTokenTransfer = new AmoyTokenTransfer(
+            address(sourceRouter),
+            address(link)
+        );
+        amoyReceiver = new AmoyReceiver(
+            address(destinationRouter),
+            address(amoyTokenTransfer)
+        );
     }
 
     function testMessageTransferPassTheValidation() public {
@@ -49,6 +57,8 @@ contract MessageTransferTest is Test {
             address(sepoliaSender),
             5 ether
         );
+
+        deal(address(CCIPBnM), user, AMOUNT_CCIPBNM);
 
         AmoyReceiverSignedMessage.SignedMessage
             memory signedMessage = AmoyReceiverSignedMessage.SignedMessage({
@@ -72,6 +82,10 @@ contract MessageTransferTest is Test {
             r,
             s
         );
+
+        // approve the transfer first
+        vm.prank(user);
+        CCIPBnM.approve(address(amoyReceiver), AMOUNT_CCIPBNM);
 
         vm.pauseGasMetering();
         bytes32 messageId = sepoliaSender.sendMessage(
