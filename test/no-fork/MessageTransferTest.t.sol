@@ -52,7 +52,7 @@ contract MessageTransferTest is Test {
         );
     }
 
-    function testMessageTransferPassTheValidation() public {
+    function testMessageTransferPass() public {
         ccipLocalSimulator.requestLinkFromFaucet(
             address(sepoliaSender),
             5 ether
@@ -99,5 +99,7 @@ contract MessageTransferTest is Test {
 
         assertEq(messageId, lastMessageId);
         assertEq(encodedSignedMessage, receivedMessage);
+        assertEq(CCIPBnM.balanceOf(address(amoyReceiver)), 0);
+        assertEq(CCIPBnM.balanceOf(user), AMOUNT_CCIPBNM);
     }
 }
