@@ -50,12 +50,7 @@ contract AmoyTokenTransfer is OwnerIsCreator {
         address _receiver,
         address _token,
         uint256 _amount
-    )
-        external
-        onlyOwner
-        validateReceiver(_receiver)
-        returns (bytes32 messageId)
-    {
+    ) public validateReceiver(_receiver) returns (bytes32 messageId) {
         // Create an EVM2AnyMessage struct in memory with necessary information for sending a cross-chain message
         //  address(linkToken) means fees are paid in LINK
         Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(
