@@ -9,7 +9,7 @@ contract GetSignedMessage is Script {
     AmoyReceiver amoyReceiver;
 
     function getSignedMessage(address mostRecentlyDeployed) public {
-        amoyReceiver = AmoyReceiver(mostRecentlyDeployed);
+        amoyReceiver = AmoyReceiver(payable(mostRecentlyDeployed));
         bytes memory signedMessage = amoyReceiver.getSignedMessage();
         console.log("Signed message: ");
         console.logBytes(signedMessage);
