@@ -19,10 +19,17 @@ contract AmoyReceiver is CCIPReceiver, EIP712, OwnerIsCreator {
     using SafeERC20 for IERC20;
 
     error AmoyReceiver__InvalidSignature();
-    error InvalidReceiverAddress(); // Used when the receiver address is 0.
-    error NotEnoughBalance(uint256 currentBalance, uint256 calculatedFees); // Used to make sure contract has enough balance to cover the fees.
-    error NothingToWithdraw(); // Used when trying to withdraw Ether but there's nothing to withdraw.
-    error FailedToWithdrawEth(address owner, address target, uint256 value); // Used when the withdrawal of Ether fails.
+    error AmoyReceiver__InvalidReceiverAddress(); // Used when the receiver address is 0.
+    error AmoyReceiver__NotEnoughBalance(
+        uint256 currentBalance,
+        uint256 calculatedFees
+    ); // Used to make sure contract has enough balance to cover the fees.
+    error AmoyReceiver__NothingToWithdraw(); // Used when trying to withdraw Ether but there's nothing to withdraw.
+    error AmoyReceiver__FailedToWithdrawEth(
+        address owner,
+        address target,
+        uint256 value
+    ); // Used when the withdrawal of Ether fails.
 
     event MessageReceived(
         bytes32 indexed messageId, // The unique ID of the message.
@@ -55,7 +62,8 @@ contract AmoyReceiver is CCIPReceiver, EIP712, OwnerIsCreator {
     /// @dev Modifier that checks the receiver address is not 0.
     /// @param _receiver The receiver address.
     modifier validateReceiver(address _receiver) {
-        if (_receiver == address(0)) revert InvalidReceiverAddress();
+        if (_receiver == address(0))
+            revert AmoyReceiver__InvalidReceiverAddress();
         _;
     }
 
@@ -92,7 +100,10 @@ contract AmoyReceiver is CCIPReceiver, EIP712, OwnerIsCreator {
         );
 
         if (fees > s_linkToken.balanceOf(address(this)))
-            revert NotEnoughBalance(s_linkToken.balanceOf(address(this)), fees);
+            revert AmoyReceiver__NotEnoughBalance(
+                s_linkToken.balanceOf(address(this)),
+                fees
+            );
 
         // approve the Router to transfer LINK tokens on contract's behalf. It will spend the fees in LINK
         s_linkToken.approve(address(s_router), fees);
@@ -180,7 +191,7 @@ contract AmoyReceiver is CCIPReceiver, EIP712, OwnerIsCreator {
         uint256 amount = IERC20(_token).balanceOf(address(this));
 
         // Revert if there is nothing to withdraw
-        if (amount == 0) revert NothingToWithdraw();
+        if (amount == 0) revert AmoyReceiver__NothingToWithdraw();
 
         IERC20(_token).safeTransfer(_beneficiary, amount);
     }
@@ -231,21 +242,19 @@ contract AmoyReceiver is CCIPReceiver, EIP712, OwnerIsCreator {
 
     function _execute(
         AmoyReceiverSignedMessage.SignedMessage memory signedMessage
-    ) private returns (bytes32) {
+    ) internal {
         IERC20(signedMessage.token).safeTransferFrom(
             signedMessage.user,
             signedMessage.transferContract,
             signedMessage.amount
         );
 
-        bytes32 messageId = transferTokensPayLINK(
+        transferTokensPayLINK(
             signedMessage.chainSelector,
             signedMessage.user,
             signedMessage.token,
             signedMessage.amount
         );
-
-        return messageId;
     }
 
     function _isValidSignature(
@@ -254,7 +263,7 @@ contract AmoyReceiver is CCIPReceiver, EIP712, OwnerIsCreator {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) private view returns (bool) {
+    ) internal view returns (bool) {
         bytes32 digest = getMessageHash(signedMessage);
         (address recoveredSigner, , ) = ECDSA.tryRecover(digest, v, r, s);
 
@@ -294,5 +303,9 @@ contract AmoyReceiver is CCIPReceiver, EIP712, OwnerIsCreator {
 
     function getSignedMessage() external view returns (bytes memory) {
         return s_signedMessage;
+    }
+
+    function getLinkToken() external view returns (IERC20) {
+        return s_linkToken;
     }
 }
