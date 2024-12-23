@@ -81,7 +81,7 @@ contract MessageTransferTest is Test {
         vm.prank(user);
         CCIPBnM.approve(address(amoyReceiver), AMOUNT_CCIPBNM);
 
-        vm.pauseGasMetering();
+        // vm.pauseGasMetering();
         bytes32 messageId = sepoliaSender.sendMessage(
             destinationChainSelector,
             address(amoyReceiver),
