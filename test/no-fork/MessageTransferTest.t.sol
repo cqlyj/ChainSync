@@ -6,7 +6,6 @@ import {CCIPLocalSimulator, IRouterClient, LinkToken, BurnMintERC677Helper} from
 import {SepoliaSender} from "src/SepoliaSender.sol";
 import {AmoyReceiver} from "src/AmoyReceiver.sol";
 import {AmoyReceiverSignedMessage} from "src/library/AmoyReceiverSignedMessage.sol";
-import {AmoyTokenTransfer} from "src/AmoyTokenTransfer.sol";
 
 contract MessageTransferTest is Test {
     CCIPLocalSimulator public ccipLocalSimulator;
@@ -15,7 +14,6 @@ contract MessageTransferTest is Test {
 
     SepoliaSender public sepoliaSender;
     AmoyReceiver public amoyReceiver;
-    AmoyTokenTransfer public amoyTokenTransfer;
 
     address user;
     uint256 userPrivateKey;
@@ -42,13 +40,9 @@ contract MessageTransferTest is Test {
         destinationRouter = _destinationRouter;
 
         sepoliaSender = new SepoliaSender(address(sourceRouter), address(link));
-        amoyTokenTransfer = new AmoyTokenTransfer(
-            address(sourceRouter),
-            address(link)
-        );
         amoyReceiver = new AmoyReceiver(
             address(destinationRouter),
-            address(amoyTokenTransfer)
+            address(link)
         );
     }
 
