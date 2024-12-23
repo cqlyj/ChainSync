@@ -6,6 +6,7 @@ import {CCIPLocalSimulator, IRouterClient, LinkToken, BurnMintERC677Helper} from
 import {SepoliaSender} from "src/SepoliaSender.sol";
 import {AmoyReceiver} from "src/AmoyReceiver.sol";
 import {AmoyReceiverSignedMessage} from "src/library/AmoyReceiverSignedMessage.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract MessageTransferTest is Test {
     CCIPLocalSimulator public ccipLocalSimulator;
@@ -20,6 +21,7 @@ contract MessageTransferTest is Test {
 
     uint256 constant AMOUNT_CCIPBNM = 1e18;
     IRouterClient destinationRouter;
+    address linkAddress;
 
     function setUp() public {
         (user, userPrivateKey) = makeAddrAndKey("user");
@@ -38,8 +40,10 @@ contract MessageTransferTest is Test {
         destinationChainSelector = chainSelector;
         CCIPBnM = ccipBnM;
         destinationRouter = _destinationRouter;
+        linkAddress = address(link);
 
         sepoliaSender = new SepoliaSender(address(sourceRouter), address(link));
+        vm.prank(user);
         amoyReceiver = new AmoyReceiver(
             address(destinationRouter),
             address(link)
@@ -49,6 +53,11 @@ contract MessageTransferTest is Test {
     function testMessageTransferPass() public {
         ccipLocalSimulator.requestLinkFromFaucet(
             address(sepoliaSender),
+            5 ether
+        );
+
+        ccipLocalSimulator.requestLinkFromFaucet(
+            address(amoyReceiver),
             5 ether
         );
 
@@ -95,5 +104,19 @@ contract MessageTransferTest is Test {
         assertEq(encodedSignedMessage, receivedMessage);
         assertEq(CCIPBnM.balanceOf(address(amoyReceiver)), 0);
         assertEq(CCIPBnM.balanceOf(user), AMOUNT_CCIPBNM);
+    }
+
+    function testOwnerCanWithdrawTheRestLink() public {
+        ccipLocalSimulator.requestLinkFromFaucet(
+            address(amoyReceiver),
+            5 ether
+        );
+
+        assertEq(IERC20(linkAddress).balanceOf(address(amoyReceiver)), 5 ether);
+
+        vm.prank(user);
+        amoyReceiver.withdrawToken(user, linkAddress);
+        assertEq(IERC20(linkAddress).balanceOf(user), 5 ether);
+        assertEq(IERC20(linkAddress).balanceOf(address(amoyReceiver)), 0);
     }
 }
