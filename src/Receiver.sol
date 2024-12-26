@@ -13,8 +13,8 @@ import {OwnerIsCreator} from "@chainlink/contracts/src/v0.8/shared/access/OwnerI
 
 /// @title Receiver
 /// @author Luo Yingjie
-/// @notice This contract will receive the message sent from sepolia chain
-/// @notice This contract will be deployed on the amoy chain
+/// @notice This contract will receive the message sent from Amoy Chain
+/// @notice This contract will be deployed on the Sepolia Chain
 contract Receiver is CCIPReceiver, EIP712, OwnerIsCreator {
     using SafeERC20 for IERC20;
 
@@ -32,10 +32,13 @@ contract Receiver is CCIPReceiver, EIP712, OwnerIsCreator {
     ); // Used when the withdrawal of Ether fails.
 
     event MessageReceived(
-        bytes32 indexed messageId, // The unique ID of the message.
-        uint64 indexed sourceChainSelector, // The chain selector of the source chain.
+        bytes32 messageId, // The unique ID of the message.
+        uint64 sourceChainSelector, // The chain selector of the source chain.
+        uint64 indexed currentChainSelector, // The chain selector of the current chain.
         address sender, // The address of the sender from the source chain.
-        bytes signedMessage // The signed message that approves the token transfer
+        bytes signedMessage, // The signed message that approves the token transfer
+        address indexed tokenTransferred, // The token that was transferred
+        address indexed signer // The signer of the message
     );
     // Event emitted when the tokens are transferred to an account on another chain.
     event TokensTransferred(
@@ -58,6 +61,7 @@ contract Receiver is CCIPReceiver, EIP712, OwnerIsCreator {
         );
     IRouterClient private s_router;
     IERC20 private s_linkToken;
+    uint64 private constant SEPOLIA_CHAIN_SELECTOR = 16015286601757825753;
 
     /// @dev Modifier that checks the receiver address is not 0.
     /// @param _receiver The receiver address.
@@ -230,8 +234,11 @@ contract Receiver is CCIPReceiver, EIP712, OwnerIsCreator {
         emit MessageReceived(
             any2EvmMessage.messageId,
             any2EvmMessage.sourceChainSelector, // fetch the source chain identifier (aka selector)
+            SEPOLIA_CHAIN_SELECTOR, // the current chain selector
             abi.decode(any2EvmMessage.sender, (address)), // abi-decoding of the sender address,
-            abi.decode(any2EvmMessage.data, (bytes)) // abi-decoding of the signed message
+            abi.decode(any2EvmMessage.data, (bytes)), // abi-decoding of the signed message
+            signedMessage.token, // the token transferred
+            signer // the signer of the message
         );
     }
 
@@ -265,8 +272,11 @@ contract Receiver is CCIPReceiver, EIP712, OwnerIsCreator {
     ) internal view returns (bool) {
         bytes32 digest = getMessageHash(signedMessage);
         (address recoveredSigner, , ) = ECDSA.tryRecover(digest, v, r, s);
-
-        return recoveredSigner == signer;
+        uint256 expiry = signedMessage.expiry;
+        if (recoveredSigner != signer || block.timestamp >= expiry) {
+            return false;
+        }
+        return true;
     }
 
     function getMessageHash(
