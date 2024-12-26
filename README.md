@@ -7,3 +7,11 @@ What this project does:
 5. If the user does not have enough balance in any of the chains, the contract will then notify the user about the insufficient balance.
 
 This is like a subscription service where the user can select the supported chains and supported ways to make payments and the contract will automatically make the payment from the user's account to the recipient's account.
+
+- TBH, I think if there is not enough token on the optional chain, it will revert, but I just want to show the integration of those chainlink techniques.
+
+---
+
+## Process of optional chain payment:
+
+![Process of optional chain payment](img/optioanl_chain_payment_process.svg)
