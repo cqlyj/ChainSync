@@ -19,12 +19,12 @@ contract AddLinkTokenToSepoliaSender is Script {
         IERC20(SEPOLIA_LINK_ADDRESS).safeTransfer(mostRecentlyDeployed, AMOUNT);
         vm.stopBroadcast();
 
-        console.log("Link token added to SepoliaSender.");
+        console.log("Link token added to Sender.");
     }
 
     function run() public {
         address mostRecentlyDeployed = DevOpsTools.get_most_recent_deployment(
-            "SepoliaSender",
+            "Sender",
             block.chainid
         );
         console.log("Most recently deployed address: ", mostRecentlyDeployed);
