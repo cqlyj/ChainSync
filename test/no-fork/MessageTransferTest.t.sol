@@ -3,9 +3,9 @@ pragma solidity 0.8.26;
 
 import {Test} from "forge-std/Test.sol";
 import {CCIPLocalSimulator, IRouterClient, LinkToken, BurnMintERC677Helper} from "@chainlink/local/src/ccip/CCIPLocalSimulator.sol";
-import {SepoliaSender} from "src/SepoliaSender.sol";
-import {AmoyReceiver} from "src/AmoyReceiver.sol";
-import {AmoyReceiverSignedMessage} from "src/library/AmoyReceiverSignedMessage.sol";
+import {Sender} from "src/Sender.sol";
+import {Receiver} from "src/Receiver.sol";
+import {ReceiverSignedMessage} from "src/library/ReceiverSignedMessage.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract MessageTransferTest is Test {
@@ -13,8 +13,8 @@ contract MessageTransferTest is Test {
     uint64 public destinationChainSelector;
     BurnMintERC677Helper public CCIPBnM;
 
-    SepoliaSender public sepoliaSender;
-    AmoyReceiver public amoyReceiver;
+    Sender public sender;
+    Receiver public receiver;
 
     address user;
     uint256 userPrivateKey;
@@ -42,40 +42,31 @@ contract MessageTransferTest is Test {
         destinationRouter = _destinationRouter;
         linkAddress = address(link);
 
-        sepoliaSender = new SepoliaSender(address(sourceRouter), address(link));
+        sender = new Sender(address(sourceRouter), address(link));
         vm.prank(user);
-        amoyReceiver = new AmoyReceiver(
-            address(destinationRouter),
-            address(link)
-        );
+        receiver = new Receiver(address(destinationRouter), address(link));
     }
 
     function testMessageTransferPass() public {
-        ccipLocalSimulator.requestLinkFromFaucet(
-            address(sepoliaSender),
-            5 ether
-        );
+        ccipLocalSimulator.requestLinkFromFaucet(address(sender), 5 ether);
 
-        ccipLocalSimulator.requestLinkFromFaucet(
-            address(amoyReceiver),
-            5 ether
-        );
+        ccipLocalSimulator.requestLinkFromFaucet(address(receiver), 5 ether);
 
         deal(address(CCIPBnM), user, AMOUNT_CCIPBNM);
 
-        AmoyReceiverSignedMessage.SignedMessage
-            memory signedMessage = AmoyReceiverSignedMessage.SignedMessage({
+        ReceiverSignedMessage.SignedMessage
+            memory signedMessage = ReceiverSignedMessage.SignedMessage({
                 chainSelector: destinationChainSelector,
                 user: user,
                 token: address(CCIPBnM),
                 amount: AMOUNT_CCIPBNM,
-                transferContract: address(amoyReceiver),
+                transferContract: address(receiver),
                 router: address(destinationRouter),
                 nonce: 0,
                 expiry: block.timestamp + 1 days
             });
 
-        bytes32 digest = amoyReceiver.getMessageHash(signedMessage);
+        bytes32 digest = receiver.getMessageHash(signedMessage);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPrivateKey, digest);
 
         bytes memory encodedSignedMessage = abi.encode(
@@ -88,35 +79,32 @@ contract MessageTransferTest is Test {
 
         // approve the transfer first
         vm.prank(user);
-        CCIPBnM.approve(address(amoyReceiver), AMOUNT_CCIPBNM);
+        CCIPBnM.approve(address(receiver), AMOUNT_CCIPBNM);
 
         // vm.pauseGasMetering();
-        bytes32 messageId = sepoliaSender.sendMessage(
+        bytes32 messageId = sender.sendMessage(
             destinationChainSelector,
-            address(amoyReceiver),
+            address(receiver),
             encodedSignedMessage
         );
 
-        bytes32 lastMessageId = amoyReceiver.getMessageId();
-        bytes memory receivedMessage = amoyReceiver.getSignedMessage();
+        bytes32 lastMessageId = receiver.getMessageId();
+        bytes memory receivedMessage = receiver.getSignedMessage();
 
         assertEq(messageId, lastMessageId);
         assertEq(encodedSignedMessage, receivedMessage);
-        assertEq(CCIPBnM.balanceOf(address(amoyReceiver)), 0);
+        assertEq(CCIPBnM.balanceOf(address(receiver)), 0);
         assertEq(CCIPBnM.balanceOf(user), AMOUNT_CCIPBNM);
     }
 
     function testOwnerCanWithdrawTheRestLink() public {
-        ccipLocalSimulator.requestLinkFromFaucet(
-            address(amoyReceiver),
-            5 ether
-        );
+        ccipLocalSimulator.requestLinkFromFaucet(address(receiver), 5 ether);
 
-        assertEq(IERC20(linkAddress).balanceOf(address(amoyReceiver)), 5 ether);
+        assertEq(IERC20(linkAddress).balanceOf(address(receiver)), 5 ether);
 
         vm.prank(user);
-        amoyReceiver.withdrawToken(user, linkAddress);
+        receiver.withdrawToken(user, linkAddress);
         assertEq(IERC20(linkAddress).balanceOf(user), 5 ether);
-        assertEq(IERC20(linkAddress).balanceOf(address(amoyReceiver)), 0);
+        assertEq(IERC20(linkAddress).balanceOf(address(receiver)), 0);
     }
 }
