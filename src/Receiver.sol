@@ -5,22 +5,22 @@ import {Client} from "@chainlink/contracts/src/v0.8/ccip/libraries/Client.sol";
 import {CCIPReceiver} from "@chainlink/contracts/src/v0.8/ccip/applications/CCIPReceiver.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import {AmoyReceiverSignedMessage} from "./library/AmoyReceiverSignedMessage.sol";
+import {ReceiverSignedMessage} from "./library/ReceiverSignedMessage.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IRouterClient} from "@chainlink/contracts/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import {OwnerIsCreator} from "@chainlink/contracts/src/v0.8/shared/access/OwnerIsCreator.sol";
 
-/// @title AmoyReceiver
+/// @title Receiver
 /// @author Luo Yingjie
 /// @notice This contract will receive the message sent from sepolia chain
 /// @notice This contract will be deployed on the amoy chain
-contract AmoyReceiver is CCIPReceiver, EIP712, OwnerIsCreator {
+contract Receiver is CCIPReceiver, EIP712, OwnerIsCreator {
     using SafeERC20 for IERC20;
 
-    error AmoyReceiver__InvalidSignature();
-    error AmoyReceiver__InvalidReceiverAddress(); // Used when the receiver address is 0.
-    error AmoyReceiver__NotEnoughBalance(
+    error Receiver__InvalidSignature();
+    error Receiver__InvalidReceiverAddress(); // Used when the receiver address is 0.
+    error Receiver__NotEnoughBalance(
         uint256 currentBalance,
         uint256 calculatedFees
     ); // Used to make sure contract has enough balance to cover the fees.
@@ -62,8 +62,7 @@ contract AmoyReceiver is CCIPReceiver, EIP712, OwnerIsCreator {
     /// @dev Modifier that checks the receiver address is not 0.
     /// @param _receiver The receiver address.
     modifier validateReceiver(address _receiver) {
-        if (_receiver == address(0))
-            revert AmoyReceiver__InvalidReceiverAddress();
+        if (_receiver == address(0)) revert Receiver__InvalidReceiverAddress();
         _;
     }
 
@@ -100,7 +99,7 @@ contract AmoyReceiver is CCIPReceiver, EIP712, OwnerIsCreator {
         );
 
         if (fees > s_linkToken.balanceOf(address(this)))
-            revert AmoyReceiver__NotEnoughBalance(
+            revert Receiver__NotEnoughBalance(
                 s_linkToken.balanceOf(address(this)),
                 fees
             );
@@ -207,7 +206,7 @@ contract AmoyReceiver is CCIPReceiver, EIP712, OwnerIsCreator {
 
         (
             address signer,
-            AmoyReceiverSignedMessage.SignedMessage memory signedMessage,
+            ReceiverSignedMessage.SignedMessage memory signedMessage,
             uint8 v,
             bytes32 r,
             bytes32 s
@@ -215,7 +214,7 @@ contract AmoyReceiver is CCIPReceiver, EIP712, OwnerIsCreator {
                 s_signedMessage,
                 (
                     address,
-                    AmoyReceiverSignedMessage.SignedMessage,
+                    ReceiverSignedMessage.SignedMessage,
                     uint8,
                     bytes32,
                     bytes32
@@ -223,7 +222,7 @@ contract AmoyReceiver is CCIPReceiver, EIP712, OwnerIsCreator {
             );
 
         if (!_isValidSignature(signer, signedMessage, v, r, s)) {
-            revert AmoyReceiver__InvalidSignature();
+            revert Receiver__InvalidSignature();
         }
 
         _execute(signedMessage);
@@ -241,7 +240,7 @@ contract AmoyReceiver is CCIPReceiver, EIP712, OwnerIsCreator {
     //////////////////////////////////////////////////////////////*/
 
     function _execute(
-        AmoyReceiverSignedMessage.SignedMessage memory signedMessage
+        ReceiverSignedMessage.SignedMessage memory signedMessage
     ) internal {
         IERC20(signedMessage.token).safeTransferFrom(
             signedMessage.user,
@@ -259,7 +258,7 @@ contract AmoyReceiver is CCIPReceiver, EIP712, OwnerIsCreator {
 
     function _isValidSignature(
         address signer,
-        AmoyReceiverSignedMessage.SignedMessage memory signedMessage,
+        ReceiverSignedMessage.SignedMessage memory signedMessage,
         uint8 v,
         bytes32 r,
         bytes32 s
@@ -271,14 +270,14 @@ contract AmoyReceiver is CCIPReceiver, EIP712, OwnerIsCreator {
     }
 
     function getMessageHash(
-        AmoyReceiverSignedMessage.SignedMessage memory signedMessage
+        ReceiverSignedMessage.SignedMessage memory signedMessage
     ) public view returns (bytes32) {
         return
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
                         MESSAGE_TYPEHASH,
-                        AmoyReceiverSignedMessage.SignedMessage({
+                        ReceiverSignedMessage.SignedMessage({
                             chainSelector: signedMessage.chainSelector,
                             user: signedMessage.user,
                             token: signedMessage.token,
