@@ -6,19 +6,17 @@ import {DevOpsTools} from "lib/foundry-devops/src/DevOpsTools.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-contract AddLinkTokenToAmoyReceiver is Script {
+contract AddLinkTokenToReceiver is Script {
     using SafeERC20 for IERC20;
 
     uint256 constant AMOUNT = 20e18; // 20 LINK should be enough for the transfer
-    address constant AMOY_LINK_ADDRESS =
-        0x0Fd9e8d3aF1aaee056EB9e802c3A762a667b1904;
+    address constant SEPOLIA_LINK_ADDRESS =
+        0x779877A7B0D9E8603169DdbD7836e478b4624789;
 
-    function addLinkTokenToAmoyTokenTransfer(
-        address mostRecentlyDeployed
-    ) public {
+    function addLinkTokenToReceiver(address mostRecentlyDeployed) public {
         vm.startBroadcast();
-        IERC20(AMOY_LINK_ADDRESS).approve(mostRecentlyDeployed, AMOUNT);
-        IERC20(AMOY_LINK_ADDRESS).safeTransfer(mostRecentlyDeployed, AMOUNT);
+        IERC20(SEPOLIA_LINK_ADDRESS).approve(mostRecentlyDeployed, AMOUNT);
+        IERC20(SEPOLIA_LINK_ADDRESS).safeTransfer(mostRecentlyDeployed, AMOUNT);
         vm.stopBroadcast();
 
         console.log("Link token added to Receiver.");
@@ -31,6 +29,6 @@ contract AddLinkTokenToAmoyReceiver is Script {
         );
         console.log("Most recently deployed address: ", mostRecentlyDeployed);
 
-        addLinkTokenToAmoyTokenTransfer(mostRecentlyDeployed);
+        addLinkTokenToReceiver(mostRecentlyDeployed);
     }
 }
