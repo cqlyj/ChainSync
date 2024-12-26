@@ -21,12 +21,12 @@ contract AddLinkTokenToAmoyReceiver is Script {
         IERC20(AMOY_LINK_ADDRESS).safeTransfer(mostRecentlyDeployed, AMOUNT);
         vm.stopBroadcast();
 
-        console.log("Link token added to AmoyTokenTransfer.");
+        console.log("Link token added to Receiver.");
     }
 
     function run() public {
         address mostRecentlyDeployed = DevOpsTools.get_most_recent_deployment(
-            "AmoyReceiver",
+            "Receiver",
             block.chainid
         );
         console.log("Most recently deployed address: ", mostRecentlyDeployed);
