@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-library AmoyReceiverSignedMessage {
+library ReceiverSignedMessage {
     struct SignedMessage {
         uint64 chainSelector; // Include the target chain selector
         address user; // Signer's address
