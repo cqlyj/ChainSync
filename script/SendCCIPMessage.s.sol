@@ -3,26 +3,26 @@ pragma solidity 0.8.26;
 
 import {Script, console} from "forge-std/Script.sol";
 import {DevOpsTools} from "lib/foundry-devops/src/DevOpsTools.sol";
-import {SepoliaSender} from "../src/SepoliaSender.sol";
+import {Sender} from "../src/Sender.sol";
 
 contract SendCCIPMessage is Script {
-    SepoliaSender sepoliaSender;
-    uint64 constant AMOY_CHAIN_SELECTOR = 16281711391670634445;
-    uint256 constant AMOY_CHAIN_ID = 80002;
+    Sender sender;
+    uint64 constant SEPOLIA_CHAIN_SELECTOR = 16015286601757825753;
+    uint256 constant SEPOLIA_CHAIN_ID = 11155111;
 
     // For now just say hello
     // This message will be used to sign the message for transfer token
-    bytes signedMessage = abi.encodePacked("Hello, Amoy!");
+    bytes signedMessage = abi.encodePacked("Hello, Sepolia!");
 
     function sendCCIPMessage(
-        address sepoliaSenderAddress,
-        address amoyReceiverAddress
+        address senderAddress,
+        address receiverAddress
     ) public {
-        sepoliaSender = SepoliaSender(sepoliaSenderAddress);
+        sender = Sender(senderAddress);
         vm.startBroadcast();
-        sepoliaSender.sendMessage(
-            AMOY_CHAIN_SELECTOR,
-            amoyReceiverAddress,
+        sender.sendMessage(
+            SEPOLIA_CHAIN_SELECTOR,
+            receiverAddress,
             signedMessage
         );
         vm.stopBroadcast();
@@ -31,24 +31,21 @@ contract SendCCIPMessage is Script {
     }
 
     function run() public {
-        address sepoliaSenderAddress = DevOpsTools.get_most_recent_deployment(
-            "SepoliaSender",
+        address senderAddress = DevOpsTools.get_most_recent_deployment(
+            "Sender",
             block.chainid
         );
-        console.log(
-            "Most recently deployed SepoliaSender address: ",
-            sepoliaSenderAddress
-        );
+        console.log("Most recently deployed Sender address: ", senderAddress);
 
-        address amoyReceiverAddress = DevOpsTools.get_most_recent_deployment(
-            "AmoyReceiver",
-            AMOY_CHAIN_ID
+        address receiverAddress = DevOpsTools.get_most_recent_deployment(
+            "Receiver",
+            SEPOLIA_CHAIN_ID
         );
         console.log(
-            "Most recently deployed AmoyReceiver address: ",
-            amoyReceiverAddress
+            "Most recently deployed Receiver address: ",
+            receiverAddress
         );
 
-        sendCCIPMessage(sepoliaSenderAddress, amoyReceiverAddress);
+        sendCCIPMessage(senderAddress, receiverAddress);
     }
 }
