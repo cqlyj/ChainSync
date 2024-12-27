@@ -11,11 +11,8 @@ contract CheckBalance is FunctionsClient, ConfirmedOwner {
     bytes32 private s_lastRequestId;
     bytes private s_lastResponse;
     bytes private s_lastError;
-    uint32 private s_gasLimit = 300000;
+    uint32 private constant GASLIMIT = 300000;
     bytes32 private s_donID;
-    string private s_chainBaseUrl;
-    address private s_tokenAddress;
-    address private s_subscriber;
     string private s_source =
         "const chainBaseUrl = args[0];"
         "const tokenAddress = args[1];"
@@ -29,8 +26,15 @@ contract CheckBalance is FunctionsClient, ConfirmedOwner {
         "const { data } = apiResponse;"
         "return Functions.encodeString(data.result);";
     uint256 private s_balance;
+    bool private s_initialized;
+
+    /*//////////////////////////////////////////////////////////////
+                                 ERRORS
+    //////////////////////////////////////////////////////////////*/
 
     error UnexpectedRequestID(bytes32 requestId);
+    error CheckBalance__AlreadyInitialized();
+    error CheckBalance__NotInitialized();
 
     event Response(
         bytes32 indexed requestId,
@@ -39,17 +43,45 @@ contract CheckBalance is FunctionsClient, ConfirmedOwner {
         uint256 indexed balance
     );
 
+    /*//////////////////////////////////////////////////////////////
+                               MODIFIERS
+    //////////////////////////////////////////////////////////////*/
+
+    modifier initializedOnlyOnce() {
+        if (s_initialized) {
+            revert CheckBalance__AlreadyInitialized();
+        }
+        _;
+    }
+
+    modifier hasInitialized() {
+        if (!s_initialized) {
+            revert CheckBalance__NotInitialized();
+        }
+        _;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                              CONSTRUCTOR
+    //////////////////////////////////////////////////////////////*/
+
     constructor(
-        string memory _chainBaseUrl,
-        address _tokenAddress,
-        address _subscriber,
         address router,
         bytes32 donID
     ) FunctionsClient(router) ConfirmedOwner(msg.sender) {
-        s_chainBaseUrl = _chainBaseUrl;
-        s_tokenAddress = _tokenAddress;
-        s_subscriber = _subscriber;
         s_donID = donID;
+        s_initialized = false;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        INITIALIZATION FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
+    function setSubscriptionAsOwner(
+        address subscription
+    ) external onlyOwner initializedOnlyOnce {
+        transferOwnership(subscription);
+        s_initialized = true;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -59,7 +91,7 @@ contract CheckBalance is FunctionsClient, ConfirmedOwner {
     function sendRequest(
         uint64 subscriptionId,
         string[] calldata args
-    ) external onlyOwner returns (bytes32 requestId) {
+    ) external onlyOwner hasInitialized returns (bytes32 requestId) {
         FunctionsRequest.Request memory req;
         req.initializeRequestForInlineJavaScript(s_source); // Initialize the request with JS code
         if (args.length > 0) req.setArgs(args); // Set the arguments for the request
@@ -68,7 +100,7 @@ contract CheckBalance is FunctionsClient, ConfirmedOwner {
         s_lastRequestId = _sendRequest(
             req.encodeCBOR(),
             subscriptionId,
-            s_gasLimit,
+            GASLIMIT,
             s_donID
         );
 
