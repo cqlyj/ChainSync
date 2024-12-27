@@ -2,10 +2,10 @@
 pragma solidity 0.8.26;
 
 import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
-import {ConfirmedOwner} from "@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol";
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract CheckBalance is FunctionsClient, ConfirmedOwner {
+contract CheckBalance is FunctionsClient, Ownable {
     using FunctionsRequest for FunctionsRequest.Request;
 
     bytes32 private s_lastRequestId;
@@ -68,7 +68,7 @@ contract CheckBalance is FunctionsClient, ConfirmedOwner {
     constructor(
         address router,
         bytes32 donID
-    ) FunctionsClient(router) ConfirmedOwner(msg.sender) {
+    ) FunctionsClient(router) Ownable(msg.sender) {
         s_donID = donID;
         s_initialized = false;
     }
