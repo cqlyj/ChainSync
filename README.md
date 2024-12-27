@@ -14,4 +14,4 @@ This is like a subscription service where the user can select the supported chai
 
 ## Process of optional chain payment:
 
-![Process of optional chain payment](img/optioanl_chain_payment_process.svg)
+![Process of optional chain payment](img/optional_chain_payment_process.svg)
