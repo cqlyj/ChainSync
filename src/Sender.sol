@@ -2,20 +2,35 @@
 pragma solidity 0.8.26;
 
 import {IRouterClient} from "@chainlink/contracts/src/v0.8/ccip/interfaces/IRouterClient.sol";
-import {OwnerIsCreator} from "@chainlink/contracts/src/v0.8/shared/access/OwnerIsCreator.sol";
 import {Client} from "@chainlink/contracts/src/v0.8/ccip/libraries/Client.sol";
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @title Sender
 /// @author Luo Yingjie
 /// @notice This contract will send a cross chain message from Amoy to Sepolia to trigger the token transfer
 /// @dev This contract will be deployed on the Amoy chain
-contract Sender is OwnerIsCreator {
+contract Sender is Ownable {
+    IRouterClient private s_router;
+    LinkTokenInterface private s_linkToken;
+
+    bool private s_initialized;
+
+    /*//////////////////////////////////////////////////////////////
+                                 ERRORS
+    //////////////////////////////////////////////////////////////*/
+
     // Custom errors to provide more descriptive revert messages.
     error Sender__NotEnoughBalance(
         uint256 currentBalance,
         uint256 calculatedFees
     ); // Used to make sure contract has enough balance.
+    error Sender__AlreadyInitialized();
+    error Sender__NotInitialized();
+
+    /*//////////////////////////////////////////////////////////////
+                                 EVENTS
+    //////////////////////////////////////////////////////////////*/
 
     // Event emitted when a message is sent to another chain.
     event MessageSent(
@@ -27,24 +42,58 @@ contract Sender is OwnerIsCreator {
         uint256 fees // The fees paid for sending the CCIP message.
     );
 
-    IRouterClient private s_router;
+    /*//////////////////////////////////////////////////////////////
+                               MODIFIERS
+    //////////////////////////////////////////////////////////////*/
 
-    LinkTokenInterface private s_linkToken;
+    modifier initializedOnlyOnce() {
+        if (s_initialized) {
+            revert Sender__AlreadyInitialized();
+        }
+        _;
+    }
+
+    modifier hasInitialized() {
+        if (!s_initialized) {
+            revert Sender__NotInitialized();
+        }
+        _;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                              CONSTRUCTOR
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Constructor initializes the contract with the router address.
     /// @param _router The address of the router contract.
     /// @param _link The address of the link contract.
-    constructor(address _router, address _link) {
+    constructor(address _router, address _link) Ownable(msg.sender) {
         s_router = IRouterClient(_router);
         s_linkToken = LinkTokenInterface(_link);
+        s_initialized = false;
     }
+
+    /*//////////////////////////////////////////////////////////////
+                        INITIALIZATION FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
+    function setSubscriptionAsOwner(
+        address subscription
+    ) external onlyOwner initializedOnlyOnce {
+        transferOwnership(subscription);
+        s_initialized = true;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                           EXTERNAL FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
 
     // This function should send the data which includes the amount to send, token address, and receiver address, and sign the approval of the token transfer
     function sendMessage(
         uint64 destinationChainSelector,
         address receiver,
         bytes calldata signedMessage // This is the signed message that approves the token transfer
-    ) external onlyOwner returns (bytes32 messageId) {
+    ) external onlyOwner hasInitialized returns (bytes32 messageId) {
         // Create an EVM2AnyMessage struct in memory with necessary information for sending a cross-chain message
         Client.EVM2AnyMessage memory evm2AnyMessage = Client.EVM2AnyMessage({
             receiver: abi.encode(receiver), // ABI-encoded receiver address
