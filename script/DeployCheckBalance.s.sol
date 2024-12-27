@@ -9,23 +9,11 @@ contract DeployCheckBalance is Script {
     function run() public {
         HelperConfig helperConfig = new HelperConfig();
         CheckBalance checkBalance;
-        (
-            string memory chainBaseUrl,
-            address tokenAddress,
-            address subscriber,
-            address router,
-            bytes32 donID,
-
-        ) = helperConfig.activeNetworkConfig();
+        (, , , address router, bytes32 donID, ) = helperConfig
+            .activeNetworkConfig();
 
         vm.startBroadcast();
-        checkBalance = new CheckBalance(
-            chainBaseUrl,
-            tokenAddress,
-            subscriber,
-            router,
-            donID
-        );
+        checkBalance = new CheckBalance(router, donID);
         vm.stopBroadcast();
     }
 }
