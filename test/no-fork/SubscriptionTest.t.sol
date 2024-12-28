@@ -19,7 +19,10 @@ contract SubscriptionTest is Test {
     address user;
     uint256 userPrivateKey;
 
+    uint256 constant AMOUNT = 1e18;
     uint256 constant AMOUNT_CCIPBNM = 1e18;
+    uint256 private constant SUBSCRIPTION_FEE = 1e16; // 0.01 ether
+
     IRouterClient destinationRouter;
     address linkAddress;
 
@@ -152,6 +155,43 @@ contract SubscriptionTest is Test {
                 .paymentTokenForOptionalChain,
             address(CCIPBnM)
         );
+    }
+
+    function testWithdrawNativeTokenAndTokenSuccess() public {
+        vm.deal(user, AMOUNT);
+        deal(address(CCIPBnM), user, AMOUNT_CCIPBNM);
+
+        // 1. withdraw native token
+        vm.prank(user);
+        subscription.paySubscriptionFeeForPrimaryChain{value: AMOUNT}(
+            address(0)
+        );
+        assertEq(address(subscription).balance, AMOUNT);
+        assertEq(user.balance, 0);
+        vm.prank(user);
+        subscription.withdraw();
+        assertEq(address(subscription).balance, 0);
+        assertEq(user.balance, AMOUNT);
+
+        // 2. withdraw token
+        vm.startPrank(user);
+        CCIPBnM.approve(address(subscription), AMOUNT_CCIPBNM);
+        subscription.paySubscriptionFeeForPrimaryChain(address(CCIPBnM));
+        vm.stopPrank();
+        assertEq(
+            IERC20(address(CCIPBnM)).balanceOf(address(subscription)),
+            SUBSCRIPTION_FEE
+        );
+        assertEq(
+            IERC20(address(CCIPBnM)).balanceOf(user),
+            AMOUNT_CCIPBNM - SUBSCRIPTION_FEE
+        );
+
+        vm.prank(user);
+        subscription.withdrawToken(address(CCIPBnM));
+
+        assertEq(IERC20(address(CCIPBnM)).balanceOf(address(subscription)), 0);
+        assertEq(IERC20(address(CCIPBnM)).balanceOf(user), AMOUNT_CCIPBNM);
     }
 
     /*//////////////////////////////////////////////////////////////
