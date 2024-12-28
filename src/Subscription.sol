@@ -43,6 +43,7 @@ contract Subscription is ILogAutomation, CCIPReceiver, Ownable {
     error Subscription__TransferFailed();
     error Subscription__InvalidToken();
     error Subscription__AddConsumerFailed();
+    error Subscription__WithdrawFailed();
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -54,6 +55,8 @@ contract Subscription is ILogAutomation, CCIPReceiver, Ownable {
         address paymentTokenForOptionalChain,
         uint64 optionalChain
     );
+
+    event Withdrawn(address token, uint256 amount);
 
     /*//////////////////////////////////////////////////////////////
                                 STRUCTS
@@ -86,6 +89,14 @@ contract Subscription is ILogAutomation, CCIPReceiver, Ownable {
         s_sender = Sender(_sender);
         i_receiver = _receiver;
     }
+
+    /*//////////////////////////////////////////////////////////////
+                                FALLBACK
+    //////////////////////////////////////////////////////////////*/
+
+    receive() external payable {}
+
+    fallback() external payable {}
 
     /*//////////////////////////////////////////////////////////////
                     CHAINLINK LOG TRIGGER AUTOMATION
@@ -247,9 +258,23 @@ contract Subscription is ILogAutomation, CCIPReceiver, Ownable {
                             OWNER FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    function withdraw() external onlyOwner {}
+    function withdraw() external onlyOwner {
+        (bool success, ) = msg.sender.call{value: address(this).balance}("");
+        if (!success) {
+            revert Subscription__WithdrawFailed();
+        }
 
-    function withdrawToken() external onlyOwner {}
+        emit Withdrawn(address(0), address(this).balance);
+    }
+
+    function withdrawToken(address token) external onlyOwner {
+        IERC20(token).safeTransfer(
+            msg.sender,
+            IERC20(token).balanceOf(address(this))
+        );
+
+        emit Withdrawn(token, IERC20(token).balanceOf(address(this)));
+    }
 
     /*//////////////////////////////////////////////////////////////
                            INTERNAL FUNCTIONS
