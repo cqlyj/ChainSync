@@ -27,7 +27,7 @@ contract SendRequestToGetBalance is Script {
         args[2] = uint256(uint160(subscriber)).toHexString();
 
         vm.startBroadcast();
-        checkBalance.sendRequest(SEPOLIA_SUBSCRIPTION_ID, args);
+        checkBalance.sendRequest(false, SEPOLIA_SUBSCRIPTION_ID, args);
         vm.stopBroadcast();
         console.log("Request sent to get balance.");
     }
