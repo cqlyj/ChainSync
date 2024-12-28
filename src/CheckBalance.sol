@@ -13,12 +13,24 @@ contract CheckBalance is FunctionsClient, Ownable {
     bytes private s_lastError;
     uint32 private constant GASLIMIT = 300000;
     bytes32 private s_donID;
-    string private s_source =
+    string private s_sourceForAllowedToken =
         "const chainBaseUrl = args[0];"
         "const tokenAddress = args[1];"
         "const subscriber = args[2];"
         "const apiResponse = await Functions.makeHttpRequest({"
         " url: `https://${chainBaseUrl}//api?module=account&action=tokenbalance&contractaddress=${tokenAddress}&address=${subscriber}`"
+        "});"
+        "if (apiResponse.error) {"
+        "throw Error('Request failed');"
+        "}"
+        "const { data } = apiResponse;"
+        "return Functions.encodeString(data.result);";
+
+    string private s_sourceForNativeToken =
+        "const chainBaseUrl = args[0];"
+        "const subscriber = args[1];"
+        "const apiResponse = await Functions.makeHttpRequest({"
+        "  url: `https://${chainBaseUrl}/api?module=account&action=eth_get_balance&address=${subscriber}`"
         "});"
         "if (apiResponse.error) {"
         "throw Error('Request failed');"
@@ -89,11 +101,16 @@ contract CheckBalance is FunctionsClient, Ownable {
     //////////////////////////////////////////////////////////////*/
 
     function sendRequest(
+        bool isNativeToken,
         uint64 subscriptionId,
         string[] calldata args
     ) external onlyOwner hasInitialized returns (bytes32 requestId) {
         FunctionsRequest.Request memory req;
-        req.initializeRequestForInlineJavaScript(s_source); // Initialize the request with JS code
+        if (isNativeToken) {
+            req.initializeRequestForInlineJavaScript(s_sourceForNativeToken); // Initialize the request with JS code
+        } else {
+            req.initializeRequestForInlineJavaScript(s_sourceForAllowedToken); // Initialize the request with JS code
+        }
         if (args.length > 0) req.setArgs(args); // Set the arguments for the request
 
         // Send the request and store the request ID
