@@ -150,7 +150,10 @@ contract Subscription is ILogAutomation, CCIPReceiver, Ownable {
         bytes memory signedMessage // signed message to approve and transfer the token
     ) public {
         // This function will call the Chainlink functions to get the balance of the token on the optional chain
-        if (paymentTokenForOptionalChain != s_allowedTokenForOptionalChain) {
+        if (
+            paymentTokenForOptionalChain != s_allowedTokenForOptionalChain &&
+            paymentTokenForOptionalChain != address(0)
+        ) {
             revert Subscription__InvalidToken();
         }
 
@@ -167,6 +170,14 @@ contract Subscription is ILogAutomation, CCIPReceiver, Ownable {
         // we just directly send the message here to approve and transfer the token
         // if not enough balance, we will still get the error message but we will not be able to revert the transaction because we don't know the balance yet
         // @audit this is not reasonable in production but a good instance to demonstrate the integration of Chainlink techniques
+
+        // @audit we didn't implement the logic to transfer native token here!
+        if (paymentTokenForOptionalChain == address(0)) {
+            // if the token is native token, just send to the contract on that chain which will emit an event each time it receives the native token
+            // it's quite simple, we don't need to sign the message and just deploy the contract on the optional chain and send the native token to it
+            // so here we just simply return, those operations can be handled simply in front-end
+            return;
+        }
 
         _sendCCIPMessage(optionalChain, signedMessage);
         // after send, receive and transfer the token, the event will be emitted on the optional chain
@@ -232,10 +243,6 @@ contract Subscription is ILogAutomation, CCIPReceiver, Ownable {
         }
     }
 
-    function changePaymentToken() external {}
-
-    function changePaymentChain() external {}
-
     /*//////////////////////////////////////////////////////////////
                             OWNER FUNCTIONS
     //////////////////////////////////////////////////////////////*/
@@ -277,7 +284,14 @@ contract Subscription is ILogAutomation, CCIPReceiver, Ownable {
         args[1] = uint256(uint160(paymentTokenForOptionalChain)).toHexString();
         args[2] = uint256(uint160(msg.sender)).toHexString();
         CheckBalance checkBalance = CheckBalance(s_sepoliaCheckBalanceAddress);
-        checkBalance.sendRequest(SEPOLIA_SUBSCRIPTION_ID, args);
+
+        if (paymentTokenForOptionalChain == address(0)) {
+            // if the token is native token
+            checkBalance.sendRequest(true, SEPOLIA_SUBSCRIPTION_ID, args);
+        } else {
+            // if the token is not native token
+            checkBalance.sendRequest(false, SEPOLIA_SUBSCRIPTION_ID, args);
+        }
     }
 
     function _sendCCIPMessage(
