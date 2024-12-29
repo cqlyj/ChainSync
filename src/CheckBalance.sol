@@ -5,6 +5,11 @@ import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/Fu
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
+/// @title CheckBalance
+/// @author Luo Yingjie
+/// @notice This contract will check the balance of a subscriber's account for a given token
+/// @notice This contract is meant to send the API request to Blockscout service and get the balance on the optional chain
+/// @dev This contract will be deployed on the primary chain same as the Subscription contract
 contract CheckBalance is FunctionsClient, Ownable {
     using FunctionsRequest for FunctionsRequest.Request;
 
