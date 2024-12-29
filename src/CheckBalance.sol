@@ -8,6 +8,10 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 contract CheckBalance is FunctionsClient, Ownable {
     using FunctionsRequest for FunctionsRequest.Request;
 
+    /*//////////////////////////////////////////////////////////////
+                            STATE VARIABLES
+    //////////////////////////////////////////////////////////////*/
+
     bytes32 private s_lastRequestId;
     bytes private s_lastResponse;
     bytes private s_lastError;
@@ -47,6 +51,10 @@ contract CheckBalance is FunctionsClient, Ownable {
     error UnexpectedRequestID(bytes32 requestId);
     error CheckBalance__AlreadyInitialized();
     error CheckBalance__NotInitialized();
+
+    /*//////////////////////////////////////////////////////////////
+                                 EVENTS
+    //////////////////////////////////////////////////////////////*/
 
     event Response(
         bytes32 indexed requestId,
@@ -142,6 +150,10 @@ contract CheckBalance is FunctionsClient, Ownable {
         emit Response(requestId, s_lastResponse, s_lastError, s_balance);
     }
 
+    /*//////////////////////////////////////////////////////////////
+                            HELPER FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
     function stringToUint256(
         string memory s
     ) public pure returns (uint256 result) {
@@ -155,6 +167,10 @@ contract CheckBalance is FunctionsClient, Ownable {
             }
         }
     }
+
+    /*//////////////////////////////////////////////////////////////
+                                GETTERS
+    //////////////////////////////////////////////////////////////*/
 
     function getResponse() external view returns (bytes memory) {
         return s_lastResponse;
