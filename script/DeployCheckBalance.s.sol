@@ -9,7 +9,7 @@ contract DeployCheckBalance is Script {
     function run() public {
         CheckBalance checkBalance;
         HelperConfig helperConfig = new HelperConfig();
-        (, address functionRouter, bytes32 donID, , , , ) = helperConfig
+        (, address functionRouter, bytes32 donID, , , , , ) = helperConfig
             .activeNetworkConfig();
 
         vm.startBroadcast();

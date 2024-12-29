@@ -10,7 +10,8 @@ contract HelperConfig is Script {
         address functionRouter;
         bytes32 donID;
         address ccipRouter;
-        uint64[] subscriptionChainsSelector;
+        // decode this to uint64[] to get the subscription chains
+        bytes subscriptionChainsSelector;
         address allowedTokenForPrimaryChain;
         address allowedTokenForOptionalChain;
         address link;
@@ -27,13 +28,16 @@ contract HelperConfig is Script {
     function getAmoyConfig() private pure returns (NetworkConfig memory) {
         uint64[] memory subscriptionChainsSelector = new uint64[](1);
         subscriptionChainsSelector[0] = 16281711391670634445;
+        bytes memory encodedSubscriptionChainsSelector = abi.encode(
+            subscriptionChainsSelector
+        );
         return
             NetworkConfig({
                 subscriber: 0xFB6a372F2F51a002b390D18693075157A459641F,
                 functionRouter: 0xC22a79eBA640940ABB6dF0f7982cc119578E11De,
                 donID: 0x66756e2d706f6c79676f6e2d616d6f792d310000000000000000000000000000,
                 ccipRouter: 0x9C32fCB86BF0f4a1A8921a9Fe46de3198bb884B2,
-                subscriptionChainsSelector: subscriptionChainsSelector,
+                subscriptionChainsSelector: encodedSubscriptionChainsSelector,
                 allowedTokenForPrimaryChain: 0x0Fd9e8d3aF1aaee056EB9e802c3A762a667b1904,
                 allowedTokenForOptionalChain: 0x0Fd9e8d3aF1aaee056EB9e802c3A762a667b1904,
                 link: 0x0Fd9e8d3aF1aaee056EB9e802c3A762a667b1904

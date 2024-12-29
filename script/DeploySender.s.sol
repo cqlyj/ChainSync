@@ -9,7 +9,7 @@ contract DeploySender is Script {
     function run() public {
         HelperConfig helperConfig = new HelperConfig();
         Sender sender;
-        (, , , address router, , , address link) = helperConfig
+        (, , , address router, , , , address link) = helperConfig
             .activeNetworkConfig();
 
         vm.startBroadcast();
