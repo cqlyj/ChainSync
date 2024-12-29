@@ -12,7 +12,9 @@ contract SendRequestToGetBalance is Script {
 
     HelperConfig public helperConfig;
     CheckBalance public checkBalance;
-    uint64 constant SEPOLIA_SUBSCRIPTION_ID = 3995;
+    uint64 constant AMOY_SUBSCRIPTION_ID = 394;
+    string constant SEPOLIA_CHAIN_BASE_URL = "eth-sepolia.blockscout.com";
+    address owner;
 
     function sendRequestToGetBalance(
         address checkBalanceAddress,
@@ -27,7 +29,8 @@ contract SendRequestToGetBalance is Script {
         args[2] = uint256(uint160(subscriber)).toHexString();
 
         vm.startBroadcast();
-        checkBalance.sendRequest(false, SEPOLIA_SUBSCRIPTION_ID, args);
+        checkBalance.setSubscriptionAsOwner(owner);
+        checkBalance.sendRequest(false, AMOY_SUBSCRIPTION_ID, args);
         vm.stopBroadcast();
         console.log("Request sent to get balance.");
     }
@@ -41,18 +44,26 @@ contract SendRequestToGetBalance is Script {
 
         helperConfig = new HelperConfig();
         (
-            string memory chainBaseUrl,
-            address tokenAddress,
             address subscriber,
             ,
             ,
+            ,
+            ,
+            ,
+            address paymentTokenForOptionalChain,
 
         ) = helperConfig.activeNetworkConfig();
 
+        /*//////////////////////////////////////////////////////////////
+                               ATTENTION
+        //////////////////////////////////////////////////////////////*/
+        // For now just set the owner to the subscriber, but in fact the owner should be the subscription contract!
+        owner = subscriber;
+
         sendRequestToGetBalance(
             mostRecentlyDeployed,
-            chainBaseUrl,
-            tokenAddress,
+            SEPOLIA_CHAIN_BASE_URL,
+            paymentTokenForOptionalChain,
             subscriber
         );
     }
