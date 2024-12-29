@@ -11,9 +11,12 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 /// @notice This contract will send a cross chain message from Amoy to Sepolia to trigger the token transfer
 /// @dev This contract will be deployed on the Amoy chain
 contract Sender is Ownable {
+    /*//////////////////////////////////////////////////////////////
+                            STATE VARIABLES
+    //////////////////////////////////////////////////////////////*/
+
     IRouterClient private s_router;
     LinkTokenInterface private s_linkToken;
-
     bool private s_initialized;
 
     /*//////////////////////////////////////////////////////////////
