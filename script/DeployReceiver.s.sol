@@ -16,5 +16,8 @@ contract DeployReceiver is Script {
         vm.startBroadcast();
         receiver = new Receiver(SEPOLIA_ROUTER, SEPOLIA_LINK);
         vm.stopBroadcast();
+
+        console.log("Receiver deployed at chainid: ", block.chainid);
+        console.log("Receiver address: ", address(receiver));
     }
 }
