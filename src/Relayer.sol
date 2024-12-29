@@ -13,17 +13,26 @@ import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interface
 /// @dev That is, this contract will be deployed on the Sepolia chain, and send a message to the Subscription contract on the Amoy chain
 /// @dev This message will contain the user address who successfully paid the subscription fee on the Sepolia chain
 contract Relayer is ILogAutomation {
+    /*//////////////////////////////////////////////////////////////
+                            STATE VARIABLES
+    //////////////////////////////////////////////////////////////*/
     IRouterClient private s_router;
-
     LinkTokenInterface private s_linkToken;
-
     uint64 private constant AMOY_CHAIN_SELECTOR = 16281711391670634445;
     address private immutable i_subscriptionAddress;
+
+    /*//////////////////////////////////////////////////////////////
+                                 ERRORS
+    //////////////////////////////////////////////////////////////*/
 
     error Relayer__NotEnoughBalance(
         uint256 currentBalance,
         uint256 calculatedFees
     );
+
+    /*//////////////////////////////////////////////////////////////
+                                 EVENTS
+    //////////////////////////////////////////////////////////////*/
 
     // Event emitted when a message is sent to another chain.
     event MessageSent(
@@ -34,6 +43,10 @@ contract Relayer is ILogAutomation {
         address feeToken, // the token address used to pay CCIP fees.
         uint256 fees // The fees paid for sending the CCIP message.
     );
+
+    /*//////////////////////////////////////////////////////////////
+                              CONSTRUCTOR
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Constructor initializes the contract with the router address.
     /// @param _router The address of the router contract.
@@ -67,6 +80,10 @@ contract Relayer is ILogAutomation {
         // send the message to the Subscription contract
         sendMessage(i_subscriptionAddress, performData);
     }
+
+    /*//////////////////////////////////////////////////////////////
+                             CCIP FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
 
     function sendMessage(
         address receiver,
