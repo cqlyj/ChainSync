@@ -6,10 +6,11 @@ import {CheckBalance} from "../src/CheckBalance.sol";
 import {DevOpsTools} from "lib/foundry-devops/src/DevOpsTools.sol";
 import {HelperConfig} from "./HelperConfig.s.sol";
 
+// This script will add the most recently deployed CheckBalance contract as a consumer
 contract AddConsumer is Script {
     CheckBalance public checkBalance;
     HelperConfig public helperConfig;
-    uint64 constant SEPOLIA_SUBSCRIPTION_ID = 3995;
+    uint64 constant AMOY_SUBSCRIPTION_ID = 394;
     address router;
 
     function addConsumer(
@@ -43,8 +44,8 @@ contract AddConsumer is Script {
         checkBalance = CheckBalance(mostRecentlyDeployed);
 
         helperConfig = new HelperConfig();
-        (, , , address _router, , ) = helperConfig.activeNetworkConfig();
+        (, address _router, , , , , , ) = helperConfig.activeNetworkConfig();
         router = _router;
-        addConsumer(SEPOLIA_SUBSCRIPTION_ID, mostRecentlyDeployed);
+        addConsumer(AMOY_SUBSCRIPTION_ID, mostRecentlyDeployed);
     }
 }
