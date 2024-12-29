@@ -39,7 +39,7 @@ contract HelperConfig is Script {
                 ccipRouter: 0x9C32fCB86BF0f4a1A8921a9Fe46de3198bb884B2,
                 subscriptionChainsSelector: encodedSubscriptionChainsSelector,
                 allowedTokenForPrimaryChain: 0x0Fd9e8d3aF1aaee056EB9e802c3A762a667b1904,
-                allowedTokenForOptionalChain: 0x0Fd9e8d3aF1aaee056EB9e802c3A762a667b1904,
+                allowedTokenForOptionalChain: 0xFd57b4ddBf88a4e07fF4e34C487b99af2Fe82a05,
                 link: 0x0Fd9e8d3aF1aaee056EB9e802c3A762a667b1904
             });
     }
