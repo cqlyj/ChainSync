@@ -12,6 +12,11 @@ import {Client} from "@chainlink/contracts/src/v0.8/ccip/libraries/Client.sol";
 import {CCIPReceiver} from "@chainlink/contracts/src/v0.8/ccip/applications/CCIPReceiver.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
+/// @title Subscription
+/// @author Luo Yingjie
+/// @notice This contract allows subscribers to pay the fee on this chain and another chain
+/// @notice This contract utilize the Chainlink CCIP, Funtions, Automation to achieve this multi-chain payment process
+/// @dev This contract will be deployed on the Amoy chain as the primary chain
 contract Subscription is ILogAutomation, CCIPReceiver, Ownable {
     using SafeERC20 for IERC20;
     using Strings for uint256;
