@@ -20,11 +20,9 @@ contract Subscription is ILogAutomation, CCIPReceiver, Ownable {
     //////////////////////////////////////////////////////////////*/
 
     uint256 private constant SUBSCRIPTION_FEE = 1e16; // 0.01 ether
-    uint256 private constant SUBSCRIPTION_PERIOD = 60; // 60 seconds, for test purposes
     uint64 private constant SEPOLIA_CHAIN_SELECTOR = 16015286601757825753;
     uint64 private constant SEPOLIA_SUBSCRIPTION_ID = 3995;
     address private immutable i_receiver;
-    // 0x86359BF03039E80aeF408bC8695a1613AD9e707a
     address private s_sepoliaCheckBalanceAddress;
     uint64[] private s_subscriptionChainsSelector;
     address private s_allowedToken;
@@ -91,7 +89,7 @@ contract Subscription is ILogAutomation, CCIPReceiver, Ownable {
     }
 
     /*//////////////////////////////////////////////////////////////
-                                FALLBACK
+                     RECEIVE AND FALLBACK FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
     receive() external payable {}
@@ -334,5 +332,33 @@ contract Subscription is ILogAutomation, CCIPReceiver, Ownable {
         address subscriber
     ) external view returns (Subscriptions memory) {
         return s_subscriberToSubscription[subscriber];
+    }
+
+    function getSubscriptionChainsSelector()
+        external
+        view
+        returns (uint64[] memory)
+    {
+        return s_subscriptionChainsSelector;
+    }
+
+    function getAllowedToken() external view returns (address) {
+        return s_allowedToken;
+    }
+
+    function getAllowedTokenForOptionalChain() external view returns (address) {
+        return s_allowedTokenForOptionalChain;
+    }
+
+    function getSepoliaCheckBalanceAddress() external view returns (address) {
+        return s_sepoliaCheckBalanceAddress;
+    }
+
+    function getSender() external view returns (Sender) {
+        return s_sender;
+    }
+
+    function getSubscriptionFee() external pure returns (uint256) {
+        return SUBSCRIPTION_FEE;
     }
 }
