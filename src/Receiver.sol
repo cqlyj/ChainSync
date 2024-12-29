@@ -14,9 +14,29 @@ import {OwnerIsCreator} from "@chainlink/contracts/src/v0.8/shared/access/OwnerI
 /// @title Receiver
 /// @author Luo Yingjie
 /// @notice This contract will receive the message sent from Amoy Chain
-/// @notice This contract will be deployed on the Sepolia Chain
+/// @notice This contract will be deployed on the Sepolia Chain(optional chain)
 contract Receiver is CCIPReceiver, EIP712, OwnerIsCreator {
     using SafeERC20 for IERC20;
+
+    /*//////////////////////////////////////////////////////////////
+                            STATE VARIABLES
+    //////////////////////////////////////////////////////////////*/
+
+    bytes32 private s_messageId;
+    bytes private s_encodedSignedMessage;
+    bytes private s_signedMessage;
+
+    bytes32 private constant MESSAGE_TYPEHASH =
+        keccak256(
+            "SignedMessage(uint64 chainSelector,address user,address token,uint256 amount,address transferContract,address router,uint256 nonce,uint256 expiry)"
+        );
+    IRouterClient private s_router;
+    IERC20 private s_linkToken;
+    uint64 private constant SEPOLIA_CHAIN_SELECTOR = 16015286601757825753;
+
+    /*//////////////////////////////////////////////////////////////
+                                 ERRORS
+    //////////////////////////////////////////////////////////////*/
 
     error Receiver__InvalidSignature();
     error Receiver__InvalidReceiverAddress(); // Used when the receiver address is 0.
@@ -30,6 +50,10 @@ contract Receiver is CCIPReceiver, EIP712, OwnerIsCreator {
         address target,
         uint256 value
     ); // Used when the withdrawal of Ether fails.
+
+    /*//////////////////////////////////////////////////////////////
+                                 EVENTS
+    //////////////////////////////////////////////////////////////*/
 
     event MessageReceived(
         bytes32 messageId, // The unique ID of the message.
@@ -51,17 +75,9 @@ contract Receiver is CCIPReceiver, EIP712, OwnerIsCreator {
         uint256 fees // The fees paid for sending the message.
     );
 
-    bytes32 private s_messageId;
-    bytes private s_encodedSignedMessage;
-    bytes private s_signedMessage;
-
-    bytes32 private constant MESSAGE_TYPEHASH =
-        keccak256(
-            "SignedMessage(uint64 chainSelector,address user,address token,uint256 amount,address transferContract,address router,uint256 nonce,uint256 expiry)"
-        );
-    IRouterClient private s_router;
-    IERC20 private s_linkToken;
-    uint64 private constant SEPOLIA_CHAIN_SELECTOR = 16015286601757825753;
+    /*//////////////////////////////////////////////////////////////
+                               MODIFIERS
+    //////////////////////////////////////////////////////////////*/
 
     /// @dev Modifier that checks the receiver address is not 0.
     /// @param _receiver The receiver address.
@@ -70,16 +86,54 @@ contract Receiver is CCIPReceiver, EIP712, OwnerIsCreator {
         _;
     }
 
+    /*//////////////////////////////////////////////////////////////
+                              CONSTRUCTOR
+    //////////////////////////////////////////////////////////////*/
+
     /// @notice Constructor initializes the contract with the router address.
     /// @param _router The address of the router contract.
     /// @param _link The address of the LINK token.
     constructor(
         address _router,
         address _link
-    ) CCIPReceiver(_router) EIP712("AmoyReceiver", "1") {
+    ) CCIPReceiver(_router) EIP712("Receiver", "1") {
         s_router = IRouterClient(_router);
         s_linkToken = IERC20(_link);
     }
+
+    /*//////////////////////////////////////////////////////////////
+                     RECEIVE AND FALLBACK FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Fallback function to allow the contract to receive Ether.
+    /// @dev This function has no function body, making it a default function for receiving Ether.
+    /// It is automatically called when Ether is transferred to the contract without any data.
+    receive() external payable {}
+
+    /*//////////////////////////////////////////////////////////////
+                            OWNER FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Allows the owner of the contract to withdraw all tokens of a specific ERC20 token.
+    /// @dev This function reverts with a 'NothingToWithdraw' error if there are no tokens to withdraw.
+    /// @param _beneficiary The address to which the tokens will be sent.
+    /// @param _token The contract address of the ERC20 token to be withdrawn.
+    function withdrawToken(
+        address _beneficiary,
+        address _token
+    ) public onlyOwner {
+        // Retrieve the balance of this contract
+        uint256 amount = IERC20(_token).balanceOf(address(this));
+
+        // Revert if there is nothing to withdraw
+        if (amount == 0) revert AmoyReceiver__NothingToWithdraw();
+
+        IERC20(_token).safeTransfer(_beneficiary, amount);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                           INTERNAL FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
 
     function transferTokensPayLINK(
         uint64 _destinationChainSelector,
@@ -177,26 +231,21 @@ contract Receiver is CCIPReceiver, EIP712, OwnerIsCreator {
             });
     }
 
-    /// @notice Fallback function to allow the contract to receive Ether.
-    /// @dev This function has no function body, making it a default function for receiving Ether.
-    /// It is automatically called when Ether is transferred to the contract without any data.
-    receive() external payable {}
+    function _execute(
+        ReceiverSignedMessage.SignedMessage memory signedMessage
+    ) internal {
+        IERC20(signedMessage.token).safeTransferFrom(
+            signedMessage.user,
+            signedMessage.transferContract,
+            signedMessage.amount
+        );
 
-    /// @notice Allows the owner of the contract to withdraw all tokens of a specific ERC20 token.
-    /// @dev This function reverts with a 'NothingToWithdraw' error if there are no tokens to withdraw.
-    /// @param _beneficiary The address to which the tokens will be sent.
-    /// @param _token The contract address of the ERC20 token to be withdrawn.
-    function withdrawToken(
-        address _beneficiary,
-        address _token
-    ) public onlyOwner {
-        // Retrieve the balance of this contract
-        uint256 amount = IERC20(_token).balanceOf(address(this));
-
-        // Revert if there is nothing to withdraw
-        if (amount == 0) revert AmoyReceiver__NothingToWithdraw();
-
-        IERC20(_token).safeTransfer(_beneficiary, amount);
+        transferTokensPayLINK(
+            signedMessage.chainSelector,
+            signedMessage.user,
+            signedMessage.token,
+            signedMessage.amount
+        );
     }
 
     /// handle a received message
@@ -242,27 +291,6 @@ contract Receiver is CCIPReceiver, EIP712, OwnerIsCreator {
         );
     }
 
-    /*//////////////////////////////////////////////////////////////
-                           INTERNAL FUNCTIONS
-    //////////////////////////////////////////////////////////////*/
-
-    function _execute(
-        ReceiverSignedMessage.SignedMessage memory signedMessage
-    ) internal {
-        IERC20(signedMessage.token).safeTransferFrom(
-            signedMessage.user,
-            signedMessage.transferContract,
-            signedMessage.amount
-        );
-
-        transferTokensPayLINK(
-            signedMessage.chainSelector,
-            signedMessage.user,
-            signedMessage.token,
-            signedMessage.amount
-        );
-    }
-
     function _isValidSignature(
         address signer,
         ReceiverSignedMessage.SignedMessage memory signedMessage,
@@ -278,6 +306,10 @@ contract Receiver is CCIPReceiver, EIP712, OwnerIsCreator {
         }
         return true;
     }
+
+    /*//////////////////////////////////////////////////////////////
+                                GETTERS
+    //////////////////////////////////////////////////////////////*/
 
     function getMessageHash(
         ReceiverSignedMessage.SignedMessage memory signedMessage
