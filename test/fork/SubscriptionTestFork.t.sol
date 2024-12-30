@@ -49,6 +49,8 @@ contract SubscriptionTestFork is Test {
     // The amount of LINK required to make a request
     uint256 constant AMOUNT_LINK_REQUEST = 20 ether;
     uint256 constant AMOUNT_CCIPBNM_TO_TRANSFER = 1e16;
+    // native token amount
+    uint256 constant AMOUNT = 1e18;
 
     /*//////////////////////////////////////////////////////////////
                             SET UP FUNCTION
@@ -238,6 +240,53 @@ contract SubscriptionTestFork is Test {
                 .getSubscriberToSubscription(user)
                 .paymentTokenForOptionalChain,
             address(destinationCCIPBnM)
+        );
+    }
+
+    function testWithdrawNativeTokenAndTokenSuccessFork() public {
+        // 1. withdraw native token
+        vm.selectFork(sourceFork);
+        vm.deal(user, AMOUNT);
+        vm.prank(user);
+        subscription.paySubscriptionFeeForPrimaryChain{value: AMOUNT}(
+            address(0)
+        );
+        assertEq(address(subscription).balance, AMOUNT);
+        assertEq(user.balance, 0);
+
+        vm.prank(user);
+        subscription.withdraw();
+        assertEq(address(subscription).balance, 0);
+        assertEq(user.balance, AMOUNT);
+
+        // 2. withdraw token
+        vm.startPrank(user);
+        deal(address(sourceCCIPBnM), user, AMOUNT_DESTINATION_CCIPBNM);
+        sourceCCIPBnM.approve(
+            address(subscription),
+            AMOUNT_CCIPBNM_TO_TRANSFER
+        );
+        subscription.paySubscriptionFeeForPrimaryChain(address(sourceCCIPBnM));
+        vm.stopPrank();
+        assertEq(
+            IERC20(address(sourceCCIPBnM)).balanceOf(address(subscription)),
+            AMOUNT_CCIPBNM_TO_TRANSFER
+        );
+        assertEq(
+            IERC20(address(sourceCCIPBnM)).balanceOf(user),
+            AMOUNT_DESTINATION_CCIPBNM - AMOUNT_CCIPBNM_TO_TRANSFER
+        );
+
+        vm.prank(user);
+        subscription.withdrawToken(address(sourceCCIPBnM));
+
+        assertEq(
+            IERC20(address(sourceCCIPBnM)).balanceOf(address(subscription)),
+            0
+        );
+        assertEq(
+            IERC20(address(sourceCCIPBnM)).balanceOf(user),
+            AMOUNT_DESTINATION_CCIPBNM
         );
     }
 
