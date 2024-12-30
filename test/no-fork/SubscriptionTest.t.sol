@@ -204,6 +204,50 @@ contract SubscriptionTest is Test {
         assertEq(IERC20(address(CCIPBnM)).balanceOf(user), AMOUNT_CCIPBNM);
     }
 
+    function testPaySubscriptionFeeforOptionalChainRevertIfInvalidSignature()
+        public
+    {
+        ccipLocalSimulator.requestLinkFromFaucet(address(sender), 20 ether);
+        ccipLocalSimulator.requestLinkFromFaucet(address(receiver), 20 ether);
+
+        deal(address(CCIPBnM), user, AMOUNT_CCIPBNM);
+
+        ReceiverSignedMessage.SignedMessage memory signedMessage = ReceiverSignedMessage
+            .SignedMessage({
+                chainSelector: destinationChainSelector,
+                user: user,
+                token: address(CCIPBnM),
+                amount: SUBSCRIPTION_FEE,
+                transferContract: address(receiver),
+                router: address(destinationRouter),
+                // here we use the wrong nonce, which should be 0
+                nonce: 1,
+                expiry: block.timestamp + 1 days
+            });
+
+        bytes32 digest = receiver.getMessageHash(signedMessage);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPrivateKey, digest);
+
+        bytes memory encodedSignedMessage = abi.encode(
+            user,
+            signedMessage,
+            v,
+            r,
+            s
+        );
+
+        // approve the transfer first
+        vm.prank(user);
+        CCIPBnM.approve(address(receiver), AMOUNT_CCIPBNM);
+
+        vm.expectRevert();
+        subscription.paySubscriptionFeeforOptionalChain(
+            address(CCIPBnM),
+            destinationChainSelector,
+            encodedSignedMessage
+        );
+    }
+
     /*//////////////////////////////////////////////////////////////
                             HELPER FUNCTIONS
     //////////////////////////////////////////////////////////////*/
