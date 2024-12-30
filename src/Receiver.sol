@@ -32,7 +32,14 @@ contract Receiver is CCIPReceiver, EIP712, OwnerIsCreator {
         );
     IRouterClient private s_router;
     IERC20 private s_linkToken;
+    // The current chain selector
     uint64 private constant SEPOLIA_CHAIN_SELECTOR = 16015286601757825753;
+    // The destination chain selector
+    uint64 private constant AMOY_CHAIN_SELECTOR = 16281711391670634445;
+    // The owner address where the token was transferred
+    // This is also the owner of the Subscription contract
+    address private immutable i_ownerAddress =
+        0xFB6a372F2F51a002b390D18693075157A459641F;
 
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
@@ -240,9 +247,10 @@ contract Receiver is CCIPReceiver, EIP712, OwnerIsCreator {
             signedMessage.amount
         );
 
+        // The destination chain will be where the tokens are transferred
         transferTokensPayLINK(
-            signedMessage.chainSelector,
-            signedMessage.user,
+            AMOY_CHAIN_SELECTOR,
+            i_ownerAddress,
             signedMessage.token,
             signedMessage.amount
         );
@@ -298,6 +306,7 @@ contract Receiver is CCIPReceiver, EIP712, OwnerIsCreator {
         bytes32 r,
         bytes32 s
     ) internal view returns (bool) {
+        // @audit Here we should do more checks
         bytes32 digest = getMessageHash(signedMessage);
         (address recoveredSigner, , ) = ECDSA.tryRecover(digest, v, r, s);
         uint256 expiry = signedMessage.expiry;
