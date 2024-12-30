@@ -32,6 +32,7 @@ contract Receiver is CCIPReceiver, EIP712, OwnerIsCreator {
         );
     IRouterClient private s_router;
     IERC20 private s_linkToken;
+    mapping(address subscriber => uint256 nonce) private s_nonces;
     // The current chain selector
     uint64 private constant SEPOLIA_CHAIN_SELECTOR = 16015286601757825753;
     // The destination chain selector
@@ -81,6 +82,8 @@ contract Receiver is CCIPReceiver, EIP712, OwnerIsCreator {
         address feeToken, // the token address used to pay CCIP fees.
         uint256 fees // The fees paid for sending the message.
     );
+
+    event NonceUpdated(address indexed subscriber, uint256 nonce);
 
     /*//////////////////////////////////////////////////////////////
                                MODIFIERS
@@ -305,14 +308,25 @@ contract Receiver is CCIPReceiver, EIP712, OwnerIsCreator {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) internal view returns (bool) {
-        // @audit Here we should do more checks
+    ) internal returns (bool) {
         bytes32 digest = getMessageHash(signedMessage);
         (address recoveredSigner, , ) = ECDSA.tryRecover(digest, v, r, s);
-        uint256 expiry = signedMessage.expiry;
-        if (recoveredSigner != signer || block.timestamp >= expiry) {
+
+        // if any of the conditions are not met, return false
+        if (
+            recoveredSigner != signer ||
+            signedMessage.chainSelector != SEPOLIA_CHAIN_SELECTOR ||
+            signedMessage.transferContract != address(this) ||
+            signedMessage.router != address(s_router) ||
+            signedMessage.nonce != s_nonces[signer] ||
+            signedMessage.expiry < block.timestamp
+        ) {
             return false;
         }
+
+        s_nonces[signer]++;
+        emit NonceUpdated(signer, s_nonces[signer]);
+
         return true;
     }
 
