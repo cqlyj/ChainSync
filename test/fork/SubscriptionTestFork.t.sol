@@ -198,7 +198,7 @@ contract SubscriptionTestFork is Test {
         vm.selectFork(sourceFork);
         vm.startPrank(user);
         vm.recordLogs();
-        subscription.paySubscriptionFeeforOptionalChain(
+        subscription.paySubscriptionFeeForOptionalChain(
             address(destinationCCIPBnM),
             destinationChainSelector,
             encodedSignedMessage
@@ -357,7 +357,7 @@ contract SubscriptionTestFork is Test {
 
         vm.selectFork(sourceFork);
         vm.startPrank(user);
-        subscription.paySubscriptionFeeforOptionalChain(
+        subscription.paySubscriptionFeeForOptionalChain(
             address(destinationCCIPBnM),
             destinationChainSelector,
             encodedSignedMessage

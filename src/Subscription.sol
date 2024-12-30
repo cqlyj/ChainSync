@@ -158,7 +158,7 @@ contract Subscription is ILogAutomation, CCIPReceiver, Ownable {
                            EXTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    function paySubscriptionFeeforOptionalChain(
+    function paySubscriptionFeeForOptionalChain(
         address paymentTokenForOptionalChain,
         uint64 optionalChain,
         bytes memory signedMessage // signed message to approve and transfer the token

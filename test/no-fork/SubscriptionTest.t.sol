@@ -121,7 +121,7 @@ contract SubscriptionTest is Test {
 
         // 1. token transferred
         vm.recordLogs();
-        subscription.paySubscriptionFeeforOptionalChain(
+        subscription.paySubscriptionFeeForOptionalChain(
             address(CCIPBnM),
             destinationChainSelector,
             encodedSignedMessage
@@ -241,7 +241,7 @@ contract SubscriptionTest is Test {
         CCIPBnM.approve(address(receiver), AMOUNT_CCIPBNM);
 
         vm.expectRevert();
-        subscription.paySubscriptionFeeforOptionalChain(
+        subscription.paySubscriptionFeeForOptionalChain(
             address(CCIPBnM),
             destinationChainSelector,
             encodedSignedMessage
