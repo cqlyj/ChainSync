@@ -302,6 +302,70 @@ contract SubscriptionTestFork is Test {
         );
     }
 
+    function testPaySubscriptionFeeforOptionalChainRevertIfInvalidSignatureFork()
+        public
+    {
+        // First, we need to request some LINK from the faucet
+        vm.selectFork(sourceFork);
+        ccipLocalSimulatorFork.requestLinkFromFaucet(
+            address(sender),
+            AMOUNT_LINK_REQUEST
+        );
+
+        vm.selectFork(destinationFork);
+        ccipLocalSimulatorFork.requestLinkFromFaucet(
+            address(receiver),
+            AMOUNT_LINK_REQUEST
+        );
+        ccipLocalSimulatorFork.requestLinkFromFaucet(
+            address(relayer),
+            AMOUNT_LINK_REQUEST
+        );
+
+        // approve the Receiver to spend the user's CCIPBnM
+        vm.prank(user);
+        destinationCCIPBnM.approve(
+            address(receiver),
+            AMOUNT_CCIPBNM_TO_TRANSFER
+        );
+
+        // Sign the message with the user's private key
+        ReceiverSignedMessage.SignedMessage memory signedMessage = ReceiverSignedMessage
+            .SignedMessage({
+                chainSelector: destinationChainSelector,
+                user: user,
+                token: address(destinationCCIPBnM),
+                amount: AMOUNT_CCIPBNM_TO_TRANSFER,
+                transferContract: address(receiver),
+                router: address(destinationRouter),
+                // We set the nonce to 1, whcih is wrong, it should be 0
+                nonce: 1,
+                // Set the expiry to 1 day later from now
+                expiry: block.timestamp + 1 days
+            });
+
+        bytes32 digest = receiver.getMessageHash(signedMessage);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPrivateKey, digest);
+
+        bytes memory encodedSignedMessage = abi.encode(
+            user,
+            signedMessage,
+            v,
+            r,
+            s
+        );
+
+        vm.selectFork(sourceFork);
+        vm.startPrank(user);
+        subscription.paySubscriptionFeeforOptionalChain(
+            address(destinationCCIPBnM),
+            destinationChainSelector,
+            encodedSignedMessage
+        );
+        vm.expectRevert();
+        ccipLocalSimulatorFork.switchChainAndRouteMessage(destinationFork);
+    }
+
     /*//////////////////////////////////////////////////////////////
                             HELPER FUNCTIONS
     //////////////////////////////////////////////////////////////*/
