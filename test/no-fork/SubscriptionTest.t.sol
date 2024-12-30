@@ -22,6 +22,10 @@ contract SubscriptionTest is Test {
     uint256 constant AMOUNT = 1e18;
     uint256 constant AMOUNT_CCIPBNM = 1e18;
     uint256 private constant SUBSCRIPTION_FEE = 1e16; // 0.01 ether
+    // In the Receiver contract, the token is transferred to this address => The real owner of the Subscription contract
+    // But here the owner is set to the user just for testing purpose
+    address private immutable i_ownerAddress =
+        0xFB6a372F2F51a002b390D18693075157A459641F;
 
     IRouterClient destinationRouter;
     address linkAddress;
@@ -93,7 +97,7 @@ contract SubscriptionTest is Test {
                 chainSelector: destinationChainSelector,
                 user: user,
                 token: address(CCIPBnM),
-                amount: AMOUNT_CCIPBNM,
+                amount: SUBSCRIPTION_FEE,
                 transferContract: address(receiver),
                 router: address(destinationRouter),
                 nonce: 0,
@@ -124,12 +128,12 @@ contract SubscriptionTest is Test {
         );
         Vm.Log[] memory entries = vm.getRecordedLogs();
 
-        // The event MessageReceived is the 13th event
-        uint64 optionalChain = uint64(uint256(entries[12].topics[1]));
+        // The event MessageReceived is the 14th event
+        uint64 optionalChain = uint64(uint256(entries[13].topics[1]));
         address paymentTokenForOptionalChain = bytes32ToAddress(
-            entries[12].topics[2]
+            entries[13].topics[2]
         );
-        address signer = bytes32ToAddress(entries[12].topics[3]);
+        address signer = bytes32ToAddress(entries[13].topics[3]);
 
         assertEq(optionalChain, destinationChainSelector);
         assertEq(paymentTokenForOptionalChain, address(CCIPBnM));
@@ -154,6 +158,12 @@ contract SubscriptionTest is Test {
                 .getSubscriberToSubscription(user)
                 .paymentTokenForOptionalChain,
             address(CCIPBnM)
+        );
+
+        // The subscription fee is transferred to the i_ownerAddress
+        assertEq(
+            IERC20(address(CCIPBnM)).balanceOf(i_ownerAddress),
+            SUBSCRIPTION_FEE
         );
     }
 

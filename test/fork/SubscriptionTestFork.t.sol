@@ -51,6 +51,10 @@ contract SubscriptionTestFork is Test {
     uint256 constant AMOUNT_CCIPBNM_TO_TRANSFER = 1e16;
     // native token amount
     uint256 constant AMOUNT = 1e18;
+    // In the Receiver contract, the token is transferred to this address => The real owner of the Subscription contract
+    // But here the owner is set to the user just for testing purpose
+    address private immutable i_ownerAddress =
+        0xFB6a372F2F51a002b390D18693075157A459641F;
 
     /*//////////////////////////////////////////////////////////////
                             SET UP FUNCTION
@@ -205,12 +209,12 @@ contract SubscriptionTestFork is Test {
 
         Vm.Log[] memory entries = vm.getRecordedLogs();
         console.log(entries.length);
-        // The event MessageReceived is the 16th event
-        uint64 optionalChain = uint64(uint256(entries[15].topics[1]));
+        // The event MessageReceived is the 17th event
+        uint64 optionalChain = uint64(uint256(entries[16].topics[1]));
         address paymentTokenForOptionalChain = bytes32ToAddress(
-            entries[15].topics[2]
+            entries[16].topics[2]
         );
-        address signer = bytes32ToAddress(entries[15].topics[3]);
+        address signer = bytes32ToAddress(entries[16].topics[3]);
 
         assertEq(optionalChain, destinationChainSelector);
         assertEq(paymentTokenForOptionalChain, address(destinationCCIPBnM));
@@ -241,6 +245,14 @@ contract SubscriptionTestFork is Test {
                 .paymentTokenForOptionalChain,
             address(destinationCCIPBnM)
         );
+        // @notice here this fork test will grab the original owner balance and compare, so we just comment out this line in fork test
+        // @notice we still assert this line of code in the no-fork test
+
+        // The subscription fee is transferred to the i_ownerAddress
+        // assertEq(
+        //     IERC20(address(sourceCCIPBnM)).balanceOf(i_ownerAddress),
+        //     AMOUNT_CCIPBNM_TO_TRANSFER
+        // );
     }
 
     function testWithdrawNativeTokenAndTokenSuccessFork() public {
