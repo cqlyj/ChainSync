@@ -5,18 +5,20 @@ import {Script, console} from "forge-std/Script.sol";
 import {DevOpsTools} from "lib/foundry-devops/src/DevOpsTools.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {HelperConfig} from "./HelperConfig.s.sol";
 
 contract AddLinkTokenToSender is Script {
     using SafeERC20 for IERC20;
 
-    uint256 constant AMOUNT = 3e18; // 3 LINK
-    address constant AMOY_LINK_ADDRESS =
-        0x0Fd9e8d3aF1aaee056EB9e802c3A762a667b1904;
+    uint256 constant AMOUNT = 5e18; // 5 LINK
+    HelperConfig helperConfig;
 
     function addLinkTokenToSender(address mostRecentlyDeployed) public {
+        helperConfig = new HelperConfig();
+        (, , , , , , , address link) = helperConfig.activeNetworkConfig();
         vm.startBroadcast();
-        IERC20(AMOY_LINK_ADDRESS).approve(mostRecentlyDeployed, AMOUNT);
-        IERC20(AMOY_LINK_ADDRESS).safeTransfer(mostRecentlyDeployed, AMOUNT);
+        IERC20(link).approve(mostRecentlyDeployed, AMOUNT);
+        IERC20(link).safeTransfer(mostRecentlyDeployed, AMOUNT);
         vm.stopBroadcast();
 
         console.log("Link token added to Sender.");
