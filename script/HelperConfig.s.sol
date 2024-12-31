@@ -27,7 +27,8 @@ contract HelperConfig is Script {
 
     function getAmoyConfig() private pure returns (NetworkConfig memory) {
         uint64[] memory subscriptionChainsSelector = new uint64[](1);
-        subscriptionChainsSelector[0] = 16281711391670634445;
+        // Sepolia chain selector
+        subscriptionChainsSelector[0] = 16015286601757825753;
         bytes memory encodedSubscriptionChainsSelector = abi.encode(
             subscriptionChainsSelector
         );
