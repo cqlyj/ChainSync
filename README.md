@@ -67,13 +67,11 @@ cp .env.example .env
 4. Follow the sequence below to deploy the contracts:
 
 ```
-
 make deploy-sender
 make deploy-checkBalance
 make deploy-receiver
 make deploy-subscription
 make deploy-relayer
-
 ```
 
 ### Interacting with the contracts
