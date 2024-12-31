@@ -45,7 +45,6 @@ contract Subscription is ILogAutomation, CCIPReceiver, Ownable {
     error Subscription__NotEnoughMoney(uint256 currentBalance);
     error Subscription__TransferFailed();
     error Subscription__InvalidToken();
-    error Subscription__AddConsumerFailed();
     error Subscription__WithdrawFailed();
 
     /*//////////////////////////////////////////////////////////////

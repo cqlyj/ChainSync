@@ -53,11 +53,6 @@ contract Receiver is CCIPReceiver, EIP712, OwnerIsCreator {
         uint256 calculatedFees
     ); // Used to make sure contract has enough balance to cover the fees.
     error AmoyReceiver__NothingToWithdraw(); // Used when trying to withdraw Ether but there's nothing to withdraw.
-    error AmoyReceiver__FailedToWithdrawEth(
-        address owner,
-        address target,
-        uint256 value
-    ); // Used when the withdrawal of Ether fails.
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
