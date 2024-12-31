@@ -10,7 +10,7 @@ import {HelperConfig} from "./HelperConfig.s.sol";
 contract AddLinkTokenToSender is Script {
     using SafeERC20 for IERC20;
 
-    uint256 constant AMOUNT = 5e18; // 5 LINK
+    uint256 constant AMOUNT = 20e18; // 20 LINK
     HelperConfig helperConfig;
 
     function addLinkTokenToSender(address mostRecentlyDeployed) public {
