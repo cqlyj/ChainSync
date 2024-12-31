@@ -26,7 +26,7 @@ contract Subscription is ILogAutomation, CCIPReceiver, Ownable {
 
     uint256 private constant SUBSCRIPTION_FEE = 1e16; // 0.01 ether
     uint64 private constant SEPOLIA_CHAIN_SELECTOR = 16015286601757825753;
-    uint64 private constant SEPOLIA_SUBSCRIPTION_ID = 3995;
+    uint64 private constant AMOY_SUBSCRIPTION_ID = 394;
     address private immutable i_receiver;
     address private s_sepoliaCheckBalanceAddress;
     uint64[] private s_subscriptionChainsSelector;
@@ -315,10 +315,10 @@ contract Subscription is ILogAutomation, CCIPReceiver, Ownable {
 
         if (paymentTokenForOptionalChain == address(0)) {
             // if the token is native token
-            checkBalance.sendRequest(true, SEPOLIA_SUBSCRIPTION_ID, args);
+            checkBalance.sendRequest(true, AMOY_SUBSCRIPTION_ID, args);
         } else {
             // if the token is not native token
-            checkBalance.sendRequest(false, SEPOLIA_SUBSCRIPTION_ID, args);
+            checkBalance.sendRequest(false, AMOY_SUBSCRIPTION_ID, args);
         }
     }
 
